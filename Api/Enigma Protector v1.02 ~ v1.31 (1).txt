@@ -1,0 +1,1487 @@
+//code for enigma protector 1.02 ~~ 1.31
+
+//code by skylly
+
+msg "忽略所有异常"
+
+var enigma_api
+
+var obfuscation
+
+mov obfuscation,0
+
+mov enigma_api,0
+
+
+
+//patch beingdebugged
+
+exec
+
+pushad
+
+mov eax,fs:[30]
+
+inc eax
+
+inc eax
+
+mov ebx,eax      //ebx,eax 都指向beingdebugged
+
+mov eax,[eax]    //取出旧值
+
+xor al,al        //置0
+
+mov [ebx],eax    //写入
+
+popad
+
+ende
+
+
+
+var loaderbase
+
+var cb
+
+var cs
+
+gmi eip,CODEBASE
+
+cmp $RESULT,0
+
+je err
+
+mov cb,$RESULT
+
+gmi eip,CODESIZE
+
+cmp $RESULT,0
+
+je err
+
+mov cs,$RESULT
+
+
+
+gpa "VirtualFree","kernel32.dll"
+
+cmp $RESULT,0
+
+je err
+
+var VF
+
+mov VF,$RESULT
+
+#log
+
+bp VF
+
+esto
+
+bc VF
+
+rtu
+
+
+
+repl eip,#89009A648F#,#909090648F#,1000       //去掉垃圾异常
+
+
+
+find eip,#E9??????FF#
+
+cmp $RESULT,0
+
+je err
+
+add $RESULT,5
+
+bp $RESULT
+
+esto
+
+bc $RESULT
+
+//过第一个循环
+
+
+
+find eip,#0F85????????#   //1.15以上版本的这里有个回跳
+
+cmp $RESULT,0
+
+je not115
+
+log "ver 1.15-1.16-1.31"
+
+//todo
+
+add $RESULT,6
+
+go $RESULT
+
+
+
+jmp not115
+
+
+
+
+
+ver131:
+
+//  00C8C0CD    894C82 04       mov     dword ptr [edx+eax*4+4], ecx//这一行是对地址进行的改写
+
+//  00C8C0D1    47              inc     edi
+
+//  00C8C0D2    FF4D D0         dec     dword ptr [ebp-30]
+
+//  00C8C0D5  ^ 0F85 CDFAFFFF   jnz     00C8BBA8                    //跳上去处理下一个加密的输入表
+
+
+// Fix IAT Emulation
+find loaderbase,#894C820447FF4D#
+cmp $RESULT,0
+je err
+mov [$RESULT],#90909090#          //普通输入表
+
+
+
+//特殊加密的函数(getmodulehandle exitprocess getcurrentprocess等)
+
+//00C9B563    894C82 04       MOV DWORD PTR DS:[EDX+EAX*4+4],ECX
+
+//00C9B567    83C3 04         ADD EBX,4
+
+//00C9B56A    66:8B3B         MOV DI,WORD PTR DS:[EBX]
+
+//00C9B56D    83C3 02         ADD EBX,2
+
+//00C9B570    66:85FF         TEST DI,DI
+
+
+//Fix API emulation
+find loaderbase,#894C820483C304668B3B83C3026685FF#
+cmp $RESULT,0
+je err
+mov [$RESULT],#90909090#          //普通输入表
+
+
+
+//enigma_api
+// //Fix API emulation
+find loaderbase,#894C820483C304#
+cmp $RESULT,0
+je err
+var encapi
+mov encapi,$RESULT
+
+
+// Fix IAT Redirection
+find loaderbase,#8902464F7599#         //iat重定位
+cmp $RESULT,0
+je err
+var relociat
+mov relociat,$RESULT
+
+
+
+find loaderbase,#0F84B70000008D45F8#   //主文件名验证(居然不让改名)
+
+cmp $RESULT,0
+
+je err
+
+mov [$RESULT],#90E9#
+
+
+
+find loaderbase,#746F546A046A00#      //创建无聊的线程
+
+cmp $RESULT,0
+
+je anothermethod
+
+mov [$RESULT],#EB#
+
+sub $RESULT,7
+
+mov [$RESULT],#C680#
+
+jmp fixapi
+
+
+
+anothermethod:           //有的程序是这么做
+
+find loaderbase,#C6431D01E8#
+
+cmp $RESULT,0
+
+je err
+
+add $RESULT,4
+
+mov [$RESULT],#9090909090#
+
+
+
+
+
+fixapi:
+
+
+
+bp encapi
+
+bp relociat
+
+loopenc:
+
+esto
+
+cmp eip,relociat
+
+je encapiok 
+
+//这里处理 enigma 特殊 api 待处理
+
+log ecx
+
+var number
+
+mov number,[ebx]
+
+log number
+
+
+
+
+
+
+
+jmp loopenc
+
+
+
+encapiok:
+
+bc encapi
+
+bc relociat
+
+
+
+
+
+mov [relociat],#EB14#       //作补丁
+
+cmt relociat,"iat重定位"
+
+
+
+
+
+var patchaddr
+
+find eip,#8D4000535657#
+
+cmp $RESULT,0
+
+je err
+
+mov patchaddr,$RESULT
+
+mov [patchaddr],#50538B008B1A89035B58EBE4#
+
+
+
+
+
+find eip,#5BC3#
+
+cmp $RESULT,0
+
+je err
+
+var fixiatok
+
+mov fixiatok,$RESULT
+
+
+
+bp fixiatok
+
+esto
+
+bc fixiatok
+
+
+
+find loaderbase,#FFE05E5B#    //准备跳oep;  jmp eax
+
+cmp $RESULT,0
+
+je err
+
+bp $RESULT
+
+esto
+
+bc $RESULT
+
+sti
+
+
+
+
+
+//注意: 1.31版本的oep开始有大段代码被偷到壳动态申请的内存中,并且有输入表截断技术,这两种加密我暂时没找到脚本自动修复的办法
+
+//只能自己手动修复,  :(
+
+
+
+
+
+//此时位于栈中,跳oep了
+
+//0012FE97    010424                      ADD DWORD PTR SS:[ESP],EAX
+
+//0012FE9A    8B05 D001DE00               MOV EAX,DWORD PTR DS:[DE01D0]                      ; unpackme.00400000
+
+//0012FEA0    C3                          RETN          //retn to oep
+
+find eip,#0104248B05#     
+
+cmp $RESULT,0
+
+je antojmp
+
+add $RESULT,9
+
+bp $RESULT
+
+esto
+
+bc $RESULT
+
+sti
+
+jmp OEP
+
+
+
+antojmp:
+
+find eip,#FFE00000#
+
+cmp $RESULT,0
+
+je err
+
+bp $RESULT
+
+esto
+
+bc $RESULT
+
+sti
+
+jmp OEP
+
+ret
+
+
+
+not115:
+
+find eip,#75AA#
+
+cmp $RESULT,0
+
+je notloop
+
+//1.11-1.12版本的这里有个循环
+
+//log "ver 1.11-1.12"
+
+add $RESULT,2
+
+go $RESULT
+
+
+
+notloop:
+
+repl eip,#89009A648F#,#909090648F#,1000       //去掉垃圾异常
+
+
+
+//代码验证处
+
+//0097D761    E8 BA97FEFF     CALL 00966F20                             //这里比较crc
+
+//0097D766    84C0            TEST AL,AL
+
+//0097D768    75 0F           JNZ SHORT 0097D779
+
+//0097D76A    BA 90D79700     MOV EDX,97D790                           ; ASCII "Internal crc not valid! File is corrupted!"
+
+//0097D76F    B8 C8D79700     MOV EAX,97D7C8                           ; ASCII "Loader"
+
+//0097D774    E8 5F030000     CALL 0097DAD8                            //这里出消息框并退出
+
+//0097D779    83C3 18         ADD EBX,18
+
+//
+
+
+
+mov loaderbase,esi
+
+log loaderbase
+
+
+
+find esi,#84C0750F#   //crc代码验证
+
+cmp $RESULT,0
+
+je nomd5
+
+add $RESULT,2
+
+mov [$RESULT],#EB#    //强跳  如果不跳,则代码的修改会被检测到
+
+cmt $RESULT,"md5 check"
+
+
+
+nomd5:
+
+find loaderbase,#A3????????031D????????8BC3#
+
+cmp $RESULT,0
+
+je err
+
+mov [$RESULT],#9090909090#     //很无耻,用crc来计算地址,代码被改自然乱跳
+
+
+
+find loaderbase,#83C8FF8BDA4B85DB72#
+
+cmp $RESULT,0
+
+je err
+
+add $RESULT,8
+
+mov [$RESULT],#EB#       //不进行crc浪费时间
+
+cmt $RESULT,"crc check"
+
+
+
+find loaderbase,#83C8FF8BDA4B85DB72#
+
+cmp $RESULT,0
+
+je err
+
+add $RESULT,8
+
+mov [$RESULT],#EB#       //不进行crc浪费时间
+
+cmt $RESULT,"crc check"
+
+
+
+//sdk加密api填充
+
+//00D4F704        8B0C8D 74CF9700 MOV ECX,DWORD PTR DS:[ECX*4+00D50174]
+
+//00D4F70B        894C02 01       MOV DWORD PTR DS:[EDX+EAX+1],ECX
+
+//00D4F70F        83C6 04         ADD ESI,4
+
+//00D4F712        66:8B1E         MOV BX,WORD PTR DS:[ESI]
+
+//00D4F715        83C6 02         ADD ESI,2
+
+//00D4F718        66:85DB         TEST BX,BX
+
+//00D4F71B        74 47           JE SHORT 00D4F764
+
+find loaderbase,#8B0C8D????????894C020183C60466#   //ver 1.12
+
+cmp $RESULT,0
+
+jne fixsdkapi
+
+find loaderbase,#8B0C8D????????894C0201EB33#       //ver 1.02
+
+cmp $RESULT,0
+
+je ver131
+
+fixsdkapi:
+
+add $RESULT,7
+
+mov [$RESULT],#90909090#     //保存sdk api  (比如getmodulehandleA这些)
+
+cmt $RESULT,"sdk api"
+
+jmp nospecialapi
+
+
+
+nospecialapi:
+
+//普通api填充
+
+//   00FCE75A          8B4C24 08        mov ecx,dword ptr ss:[esp+8]
+
+//   00FCE75E          894C02 01        mov dword ptr ds:[edx+eax+1],ecx    //iat加密
+
+find loaderbase,#8B4C24??894C0201#
+
+cmp $RESULT,0
+
+je normal2
+
+add $RESULT,4
+
+jmp findenapi
+
+
+
+normal2:
+
+find loaderbase,#8B4D??894C0201#
+
+cmp $RESULT,0
+
+je err
+
+add $RESULT,3
+
+
+
+findenapi:
+
+mov [$RESULT],#90909090#     //保存普通api
+
+cmt $RESULT,"normal api"
+
+
+
+find loaderbase,#894C020183C604#        //enigma_api
+
+cmp $RESULT,0
+
+je concon                   //1.11以下的版本没有enigma_api
+
+mov enigma_api,$RESULT
+
+cmt $RESULT,"enigma api"
+
+
+
+concon:
+
+
+
+bprm cb,cs
+
+esto
+
+bpmc
+
+
+
+//此时应该停在解码处:
+
+//00962823    F3:A5                               REP MOVS DWORD PTR ES:[EDI],DWORD PTR DS>
+
+//00962825    89C1                                MOV ECX,EAX
+
+//00962827    83E1 03                             AND ECX,3
+
+//0096282A    F3:A4                               REP MOVS BYTE PTR ES:[EDI],BYTE PTR DS:[>
+
+//0096282C    5F                                  POP EDI
+
+//0096282D    5E                                  POP ESI
+
+var temp
+
+mov temp,[eip]
+
+and temp,FFFF
+
+cmp temp,A5F3
+
+jne err
+
+
+
+rtr
+
+sti
+
+rtr
+
+sti
+
+
+
+//这里开始判断版本(不是很精确)
+
+mov temp,[eip]
+
+and temp,FFFF
+
+cmp temp,558D      //lea edx,[ebp-10]              
+
+jne not102
+
+log "ver 1.02"
+
+rtr
+
+sti
+
+rtr
+
+sti
+
+
+
+clearseh:
+
+//设置异常处理
+
+//0098634F    64:FF35 0000000>PUSH DWORD PTR FS:[0]
+
+//00986356    64:8925 0000000>MOV DWORD PTR FS:[0],ESP
+
+find eip,#64FF350000000064892500000000EB02#
+
+cmp $RESULT,0
+
+je start
+
+var patchaddr
+
+mov patchaddr,$RESULT
+
+add patchaddr,E
+
+
+
+//拆除异常处理
+
+//00984666    64:8F05 0000000>POP DWORD PTR FS:[0]
+
+//0098466D    EB 02           JMP SHORT 00984671
+
+//0098466F    9A 0083C404 E80>CALL FAR 02E8:04C48300                   
+
+find patchaddr,#648F0500000000EB029A0083C404E802#
+
+cmp $RESULT,0
+
+je err
+
+//add $RESULT,E
+
+var newaddr
+
+mov newaddr,$RESULT
+
+
+
+bp patchaddr
+
+esto
+
+bc patchaddr
+
+
+
+mov eip,newaddr 	//美特斯邦威 不走寻常路  避开非常精彩的异常链~~~
+
+
+
+start:
+
+inc newaddr
+
+find newaddr,#648F0500000000EB029A0083C404E802#
+
+cmp $RESULT,0
+
+je err
+
+bp $RESULT
+
+esto
+
+bc $RESULT
+
+//经过一个int3异常
+
+
+
+jmp fixiatreloc
+
+ret
+
+
+
+not102:
+
+and temp,FF
+
+cmp temp,A1        //MOV EAX,DWORD PTR DS:[11402CC]
+
+jne not114
+
+log "ver 1.14"
+
+find loaderbase,#74708B06E8#
+
+cmp $RESULT,0
+
+je ver112
+
+mov [$RESULT],#EB#    //"病毒"检测
+
+
+
+find loaderbase,#74708B06E8#
+
+cmp $RESULT,0
+
+je err
+
+mov [$RESULT],#EB#    //"病毒"检测
+
+
+
+
+
+//注意 1.14 1.15 1.16版本的主程序有code replace     代码中有部分被偷到壳中  (nop;jmp xxxx的形式~~~)   待处理
+
+jmp ver112
+
+ret
+
+
+
+unkownver:
+
+log "unkown version,please contact skylly to get help"
+
+ret
+
+
+
+
+
+not114:
+
+cmp temp,E8 	   //CALL 00D47F4B
+
+jne unkownver
+
+log "ver 1.11-1.12"
+
+
+
+ver112:
+
+
+
+find eip,#A9000000807528#
+
+cmp $RESULT,0
+
+je err
+
+var addr
+
+mov addr,$RESULT
+
+add addr,11
+
+var baseaddr
+
+mov baseaddr,[addr]
+
+add addr,8
+
+var magicaddr
+
+mov magicaddr,[addr]
+
+add addr,6
+
+var offaddr
+
+mov offaddr,[addr]
+
+
+
+mov baseaddr,[baseaddr]
+
+mov baseaddr,[baseaddr]
+
+
+
+mov magicaddr,[magicaddr]
+
+
+
+add magicaddr,offaddr
+
+mov magicaddr,[magicaddr]
+
+
+
+add magicaddr,baseaddr
+
+
+
+find eip,#2500F0FFFF0500100000#
+
+cmp $RESULT,0
+
+je fixdatareloc2
+
+add $RESULT,5
+
+var patchreloc
+
+mov patchreloc,$RESULT
+
+mov [patchreloc],#B8#
+
+inc patchreloc
+
+mov [patchreloc],magicaddr        //数据段重定位
+
+
+
+fixiatreloc:
+
+find loaderbase,#890F404A75D0#   //iat重定位
+
+cmp $RESULT,0
+
+je err
+
+var magicpatchaddr
+
+mov magicpatchaddr,$RESULT
+
+
+
+find loaderbase,#80B838030000007405E8????FFFFA1????????80B839030000007407E8????FFFFEB05E8??????FF# 
+
+cmp  $RESULT,0         //这里的特征码借鉴前人的杰作
+
+je   normalapi
+
+jmp heheob
+
+
+
+normalapi:
+
+find loaderbase,#80B8??03000000740CA1????????8B00E8??????FFA1????????80B8??030000007407E8??????FFEB05E8??????FF# 
+
+cmp  $RESULT,0         //这里的特征码借鉴前人的杰作
+
+je   prossiat
+
+
+
+
+
+heheob:
+
+mov  obfuscation,$RESULT  //Find import obfuscation. 
+
+cmt  obfuscation,"<-- Import Obfuscation!" 
+
+
+
+bp obfuscation
+
+cmp enigma_api,0
+
+je loopenigma_api
+
+
+
+
+
+bp enigma_api
+
+
+
+loopenigma_api:         
+
+esto
+
+cmp eip,obfuscation
+
+je fixenigmaok
+
+//这里处理enimag_api
+
+log ecx
+
+var number
+
+mov number,[esi]
+
+log number
+
+
+
+ea0:
+
+cmp number,A
+
+jne ea1
+
+cmt ecx,"_GetExpiratonDate@12"
+
+jmp nextea
+
+
+
+ea1:
+
+cmp number,9
+
+jne ea2
+
+cmt ecx,"_GetNumberOfDays@8"
+
+jmp nextea
+
+
+
+ea2:
+
+cmp number,8
+
+jne ea3
+
+cmt ecx,"_GetNumberOfExecutions@8"
+
+jmp nextea
+
+
+
+ea3:
+
+cmp number,7
+
+jne ea4
+
+cmt ecx,"_DeleteKey@0"
+
+jmp nextea
+
+
+
+ea4:
+
+cmp number,6
+
+jne ea5
+
+cmt ecx,"_CheckAndSaveKey@8"
+
+jmp nextea
+
+
+
+ea5:
+
+cmp number,5
+
+jne ea6
+
+cmt ecx,"_LoadAndCheckKey@0"
+
+jmp nextea
+
+
+
+ea6:
+
+cmp number,4
+
+jne ea7
+
+cmt ecx,"_LoadKey@8"
+
+jmp nextea
+
+
+
+ea7:
+
+cmp number,3
+
+jne ea8
+
+cmt ecx,"_SaveKey@8"
+
+jmp nextea
+
+
+
+ea8:
+
+cmp number,2
+
+jne ea9
+
+cmt ecx,"_CheckKey@8"
+
+jmp nextea
+
+
+
+ea9:
+
+cmp number,1
+
+jne default
+
+cmt ecx,"_GetHardwareId@0"
+
+jmp nextea
+
+
+
+default:
+
+cmt ecx,"_unknown"
+
+
+
+nextea:
+
+jmp loopenigma_api
+
+
+
+fixenigmaok:
+
+bc obfuscation
+
+bc enigma_api
+
+
+
+var temp
+
+mov temp,eip
+
+add temp,2
+
+mov temp,[temp]
+
+add temp,eax
+
+mov temp,[temp]
+
+cmp temp,0
+
+jne prossiat
+
+jmp fixdatareloc       //针对某些壳不加密iat
+
+ret
+
+
+
+prossiat:
+
+bp magicpatchaddr
+
+esto
+
+bc magicpatchaddr
+
+
+
+find eip,#535657#
+
+cmp $RESULT,0
+
+je err
+
+var magicpatch
+
+mov magicpatch,$RESULT
+
+
+
+var save1
+
+var save2
+
+var save3
+
+
+
+mov save1,[magicpatch]
+
+add magicpatch,4
+
+mov save2,[magicpatch]
+
+add magicpatch,4
+
+mov save3,[magicpatch]
+
+
+
+sub magicpatch,8
+
+mov [magicpatch],#50538B018B1F89035B58EBE4#   //作补丁
+
+
+
+mov [magicpatchaddr],#EB10#       
+
+cmt magicpatchaddr,"iat重定位"
+
+
+
+find eip,#5BC3#
+
+cmp $RESULT,0
+
+je err
+
+var fixiatok
+
+mov fixiatok,$RESULT
+
+
+
+bp fixiatok
+
+esto
+
+bc fixiatok
+
+
+
+mov [magicpatch],save1
+
+add magicpatch,4
+
+mov [magicpatch],save2
+
+add magicpatch,4
+
+mov [magicpatch],save3
+
+//iat重定位处理完毕
+
+
+
+//开始处理数据段重定位
+
+fixdatareloc:
+
+find eip,#03??01??EB??8B0D#
+
+cmp $RESULT,0
+
+je fixdatareloc2
+
+add $RESULT,2
+
+mov [$RESULT],#9090#   //不使用壳自己的重定位方法
+
+//数据段重定位处理完毕
+
+
+
+fixdatareloc2:
+
+//处理数据段重定位
+
+//01046A7B    83B8 98000000 00   CMP DWORD PTR DS:[EAX+98],0
+
+//01046A82    0F84 30010000      JE 01046BB8
+
+find eip,#83B898000000000F84#
+
+cmp $RESULT,0
+
+je jmpingoep
+
+bp $RESULT
+
+esto
+
+bc $RESULT
+
+
+
+find eip,#6A046800100000A1#
+
+cmp $RESULT,0
+
+je err
+
+var addr
+
+mov addr,$RESULT
+
+
+
+var magicaddr
+
+mov magicaddr,addr
+
+add magicaddr,8
+
+mov magicaddr,[magicaddr]
+
+mov magicaddr,[magicaddr]
+
+
+
+mov [addr],#9090909090909090909090909090909090909090909090909090#       //不去申请内存,资源是可贵的
+
+
+
+var baseaddr
+
+find eip,#2B8A????????8B15????????2B8A#
+
+cmp $RESULT,0
+
+je err
+
+mov baseaddr,$RESULT
+
+add baseaddr,2
+
+mov baseaddr,[baseaddr]
+
+
+
+var allocaddr
+
+mov allocaddr,$RESULT
+
+add allocaddr,E
+
+mov allocaddr,[allocaddr]
+
+
+
+add baseaddr,magicaddr
+
+add allocaddr,magicaddr
+
+
+
+mov baseaddr,[baseaddr]
+
+mov allocaddr,[allocaddr]
+
+
+
+add allocaddr,baseaddr
+
+
+
+eval "mov eax,{allocaddr}"
+
+asm addr,$RESULT              //我自己给它重定位到正确地址
+
+//重定位处理完毕
+
+jmp jmpingoep
+
+
+
+jmpingoep:
+
+//此处判断跳OEP的方式
+
+find eip,#8378??000F86??000000#
+
+cmp $RESULT,0
+
+je oldmethod
+
+bp $RESULT
+
+esto
+
+bc $RESULT
+
+var temp
+
+mov temp,eip
+
+add temp,2
+
+mov temp,[temp]
+
+and temp,FF
+
+add temp,eax
+
+mov temp,[temp]
+
+cmp temp,0
+
+ja oldmethod
+
+//最后用一个异常跳oep
+
+
+
+midmethod:
+
+find loaderbase,#010424A1#
+
+cmp $RESULT,0
+
+je err
+
+add $RESULT,8
+
+mov  jmpoep,$RESULT
+
+jmp jmpedoep
+
+ret
+
+
+
+newmethod:
+
+find eip,#50E8????????EB#
+
+cmp $RESULT,0
+
+je err
+
+go $RESULT
+
+mov tagaddr,ecx
+
+and tagaddr,FFFFFF00
+
+
+
+jmp allisok
+
+ret
+
+
+
+oldmethod:
+
+//壳搬运数据的地方
+
+find loaderbase,#81FA54414452#
+
+cmp $RESULT,0
+
+je newmethod
+
+var mover
+
+mov mover,$RESULT
+
+bp mover
+
+esto
+
+bc mover
+
+
+
+var tagaddr
+
+mov tagaddr,eax
+
+
+
+find eip,#C2??00#
+
+cmp $RESULT,0
+
+je err
+
+go $RESULT
+
+jmp allisok
+
+
+
+allisok:
+
+find tagaddr,#61C3#    //popad;retn;      jmp oep
+
+cmp $RESULT,0
+
+je err
+
+var jmpoep
+
+mov jmpoep,$RESULT
+
+inc jmpoep
+
+
+
+jmpedoep:
+
+bp jmpoep
+
+esto
+
+bc jmpoep
+
+sti
+
+
+
+OEP:
+
+cmt eip,"fake oep,fix oep and dump now"
+
+an eip
+
+ret
+
+err:
+
+msg "error"
+
+ret

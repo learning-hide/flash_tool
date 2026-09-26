@@ -1,0 +1,7310 @@
+////////////////////////Ch?teau-Saint-
+Martin/////////////////////////////////////////////////////////////////////////////
+/////////////////////
+//                                                                      ///////////
+//////////////////////////////////////////////////////////
+//  FileName    :  Enigma 1.x - 3.x VM Unpacker
+1.0                     ///////////////////////////////////////////////////////////
+/////////
+//
+Features    :                                                       ///////////////
+////////////////////////////////////////////////////
+//                 This script can unpack almost any normal
+protected   //////////////////////////////////////////////////////////////////
+//                 ENIGMA file.Setup the USER_SETTING label
+before      /////////////////////////////////////////////////////////////////
+//                 you run the
+script!                                  //////////////////////////////////////////
+//////////////////////
+//                                                                      ///////////
+////////////////////////////////////////////////////
+//                 Watch my movies to know how to use this
+script!      //////////////////////////////////////////////////////////////
+//                                                                      ///////////
+//////////////////////////////////////////////////
+//
+*************************************************** ///////////////////////////////
+/////////////////////////////
+//               ( 1.) Unpacking of ENIGMA 1.x - 3.x
+* ///////////////////////////////////////////////////////////
+//
+* //////////////////////////////////////////////////////////
+//               ( 2.) Overlay Scan & Dump
+* /////////////////////////////////////////////////////////
+//
+* ////////////////////////////////////////////////////////
+//               ( 3.) Enigma Version & Extra Data Scan
+* ///////////////////////////////////////////////////////
+//
+* //////////////////////////////////////////////////////
+//               ( 4.) Attached File Dumper
+* /////////////////////////////////////////////////////
+//
+* ////////////////////////////////////////////////////
+//               ( 5.) Dumping of Clean & Fixed ENIGMA DLL_Loader  *1
+* ///////////////////////////////////////////////////
+//
+* //////////////////////////////////////////////////
+//               ( 6.) Read - Log - Labeling of DLL_Loader Exports *1
+* /////////////////////////////////////////////////
+//
+* ////////////////////////////////////////////////
+//               ( 7.) RegSheme Bypass for Old & New Versions      *1
+* ///////////////////////////////////////////////
+//
+* //////////////////////////////////////////////
+//               ( 8.) HWID Changer for Old & New Versions         *1
+* /////////////////////////////////////////////
+//
+* ////////////////////////////////////////////
+//               ( 9.) Extra File Dumper - VBox               M1 & M2
+* ///////////////////////////////////////////
+//
+* //////////////////////////////////////////
+//              ( 10.) VirtualMemory Fixer 1.96 - 3.7+          I & O
+* /////////////////////////////////////////
+//
+* ////////////////////////////////////////
+//              ( 11.) Stolen Code Fixer                      M1 & M2
+* ///////////////////////////////////////
+//
+* //////////////////////////////////////
+//              ( 12.) VM OEP Scan & Move & Adjustment
+* /////////////////////////////////////
+//
+* ////////////////////////////////////
+//              ( 13.) Advanced Code Redirector               M1 & M2
+* ///////////////////////////////////
+//
+* //////////////////////////////////
+//              ( 14.) IAT Scanner
+* /////////////////////////////////
+//
+* ////////////////////////////////
+//              ( 15.) Visual Basic API Fixer
+* ///////////////////////////////
+//
+* //////////////////////////////
+//              ( 16.) Visual Basic Dll Function Logger
+* /////////////////////////////
+//
+* ////////////////////////////
+//              ( 17.) ENIGMA DLL_Loader SDK API Fixer             *1
+* ///////////////////////////
+//
+* //////////////////////////
+//              ( 18.) Extra File SDK API Fixer
+* /////////////////////////
+//
+* ////////////////////////
+//              ( 19.) TLS CB FIXER
+* ///////////////////////
+//
+* //////////////////////
+//              ( 20.) TLS Pointer Scan & Fixer       [Borland Issue]
+* /////////////////////
+//
+* ////////////////////
+//              ( 21.) PE Header Size Increase                VS = RS
+* ///////////////////
+//
+* //////////////////
+//              ( 22.) Main File Dumper
+* /////////////////
+//
+* ////////////////
+//              ( 23.) GetStartupInfo Patcher                      *1
+* ///////////////
+//
+* //////////////
+//              ( 24.) Special Anti Patcher
+* /////////////
+//
+* ////////////
+//              ( 25.) Supports Exe & Dll Files         [ dll at EP!] * ///////////
+//                                                                    * //////////
+//              ( 26.) Supports Very Easy User Handling               * /////////
+//                                                                    * ////////
+//                  *************************************************** ///////
+//  Environment :  WinXP,OllyDbg V1.10,OllyScript v1.82.x               //////
+//                                                                      /////
+//  Author      :  LCF-AT                                               ////
+//  Date        :  2012-18-07 | Juli                                    ///
+//                                                                      //
+//                                                                   //
+///////////////WILLST DU SPAREN,DANN MU?T DU SPAREN!////////////////////
+BC
+BPMC
+BPHWC
+call VARS
+pause
+LC
+LCLR
+////////////////////////////////////////////////////////////
+CUSTOM_DLL_PATH_SETUP:
+/*
+Before you run this script the first time you have to enter your dll path of all 4
+custom dll files!
+Don't change the dll files with other dll versions or script will fail!
+PS: In some cases it can happen that Olly just crash if you press YES if the script
+ask you about
+    start fixing xy tool!If so then just press NO and start your fixing tool
+manually!
+    Sorry I could not fix this problem.I did try WinExec & ShellExecuteA but both
+failed sometimes.
+*/
+////////////////////////////////////////////////////////////
+mov FIX_TOOL,  "C:\olly\Tools\Scylla_v0.7beta5\Scylla_x86.exe"
+mov DV_DLL,    "C:\olly\Tools\Enigma.dll"
+mov TITAN,     "C:\olly\Tools\TitanEngine.dll"
+mov DISASM,    "C:\olly\Tools\disasm.dll"
+mov TDISASM,   "C:\olly\Tools\tdisasm.dll"
+jmp VERSION_START_CHECK
+////////////////////////////////////////////////////////////
+/*
+*1      = Means If Enabled = 01 In The USER_SETTING Label
+M1 & M2 = Means Method 1 and Method 2
+I & O   = Means Inner & Outer VM
+VS = RS = Means Virtual Size = Raw Size
+VBox    = Dumped Only Files before OEP and After OEP if you want!
+VBox    = Just Basic Methods!For Other Methods You Have To Do It Manually!Check The
+Ntdll Hooked API's!
+Anti-Debug Main Setup / JUST ENABLE....
+------------------------
+ -StrongOD
+------------------------
+- HidePEB         Enable
+- !*PatchFloat    Enable
+- *KernelMode     Enable
+- !*Kill Bad PE   Enable
+- Skip some EC's  Enable
+------------------------
+- Change Original Drivername into OllyDBG.ini file!
+  DriverName=newcustom
+------------------------
+------------------------
+ -Phant0m | For XP only
+------------------------
+- Protect DRx     Enable
+------------------------
+Keep DRx always enabled for modern ENIGMA files!
+For older ENIGMA files you have to disable DRx if the unpack process failed!
+------------------------
+ -POISON
+------------------------
+- GetStartUpInfo  Enable
+------------------------
+If you don't use POISON then you can also set the "GETSTARTUPINFO_PATCH" into
+the USER_SETTING to 01!
+*/
+////////////////////////////////////////////////////////////
+USER_SETTING:
+mov TRY_OLD_UNPACK,         00   // Set it to 01 of your target is a 1.02 - 1.31
+protected version!
+//---------------------------------------------------------------------------------
+-----------
+mov READ_DLL_LOADER,        00   // Log all Enigma Loader Export API Functions &
+Fix SDK API ENTRYS if used
+mov PATCH_HWID_SILENCE,     01   // If check was found then it will patched in a
+silence mode - older versions
+mov CHANGE_HWID,            01   // Set to 01 if you have valid data to enter
+mov BYPASS_REGSHEME,        01   // Set to 01 if you want to bypass the RegShme -
+Simple Method setne al
+mov FIX_OUTER_VM_INSIDE,    01   // Forced fixing of Outer VM direct into main
+target
+mov GETSTARTUPINFO_PATCH,   00   // STARTUPINFO structure patch.Keep or disable it
+or use POISON plugin to patch it
+ret
+/*
+-----------------------------------------------------------------------------------
+---------
+NOTE: IF "CHANGE_HWID"        = 01 then it disabled "PATCH_HWID_SILENCE" &
+"BYPASS_REGSHEME"
+      IF "PATCH_HWID_SILENCE" = 01 then it disabled "BYPASS_REGSHEME"
+-----------------------------------------------------------------------------------
+---------
+-----------------------------------------------------------------------------------
+---------
+Dll files will fixed automatic VM direct into main module!
+Extra found embedded files will dumped and reloaded if exports of extra dlls are
+used!
+Export API Adjustment of all extra modules!
+-----------------------------------------------------------------------------------
+---------
+NOTE: Normaly you can let disabled "READ_DLL_LOADER" = 00 for normaly ENIGMA files!
+      You can enable to get a complete list of all exports + txt log file!
+      Also all Exports will get a Name API label in the ENIGMA section!
+      Export scan in IAT of Dll_loader is only used if you set it "READ_DLL_LOADER"
+to 01
+NOTE: The script only unpack normal protected ENIGMA targets and no modded version
+mix like
+      ENIGMA with VMProtect code!
+-----------------------------------------------------------------------------------
+---------
+*/
+////////////////////
+VERSION_START_CHECK:
+CMP $VERSION, "1.82"
+je RIGHT_SCRIPT_VERSION
+ja RIGHT_SCRIPT_VERSION
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Your script plugin is not up to date! \r\n\
+r\n{LINES} \r\n{MY}"
+msg $RESULT
+pause
+ret
+////////////////////
+RIGHT_SCRIPT_VERSION:
+GPI PROCESSID
+mov PROCESSID, $RESULT
+GPI PROCESSNAME
+mov PROCESSNAME, $RESULT
+mov PROCESSNAME_2, $RESULT
+len PROCESSNAME
+mov PROCESSNAME_COUNT, $RESULT
+buf PROCESSNAME_COUNT
+alloc 1000
+mov PROCESSNAME_FREE_SPACE, $RESULT
+mov PROCESSNAME_FREE_SPACE_2, $RESULT
+mov EIP_STORE, eip
+mov eip, PROCESSNAME_FREE_SPACE
+mov [PROCESSNAME_FREE_SPACE], PROCESSNAME
+////////////////////
+PROCESSNAME_CHECK:
+cmp [PROCESSNAME_FREE_SPACE],00
+je PROCESSNAME_CHECK_02
+cmp [PROCESSNAME_FREE_SPACE],#20#, 01
+je PROCESSNAME_CHECK_01
+cmp [PROCESSNAME_FREE_SPACE],#2E#, 01
+je PROCESSNAME_CHECK_01
+inc PROCESSNAME_FREE_SPACE
+jmp PROCESSNAME_CHECK
+////////////////////
+PROCESSNAME_CHECK_01:
+mov [PROCESSNAME_FREE_SPACE], #5F#, 01
+jmp PROCESSNAME_CHECK
+////////////////////
+PROCESSNAME_CHECK_02:
+readstr [PROCESSNAME_FREE_SPACE_2], 08
+mov PROCESSNAME, $RESULT
+str PROCESSNAME
+mov eip, EIP_STORE
+free PROCESSNAME_FREE_SPACE
+////////////////////
+GET_MODULE_BASE:
+GMA PROCESSNAME, MODULEBASE
+cmp $RESULT, 00
+jne MODULEBASE
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}The script can't get the ImageBase of your
+file >>> {PROCESSNAME_2} <<< {L1}Open the memory map and look for some RED color
+marked modules and set them to FULL ACCESS {L1}Then just resume this script. \r\n\
+r\n{LINES} \r\n{MY}"
+msg $RESULT
+pause
+refresh eip
+jmp GET_MODULE_BASE
+////////////////////
+MODULEBASE:
+mov MODULEBASE, $RESULT
+mov PE_HEADER, $RESULT
+GPI CURRENTDIR
+mov CURRENTDIR, $RESULT
+////////////////////
+gmemi PE_HEADER, MEMORYSIZE
+mov PE_HEADER_SIZE, $RESULT
+cmp PE_HEADER_SIZE, 1000
+je HEADER_NORMAL
+jb HEADER_NORMAL
+log "The script does not support NetFrameWork targets!"
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}{PROCESSNAME_2} {L1}PE Size:
+{PE_HEADER_SIZE} {L1}The script does not support NetFrameWork targets! \r\n\r\
+n{LINES} \r\n{MY}"
+msg $RESULT
+ret
+////////////////////
+HEADER_NORMAL:
+add CODESECTION, MODULEBASE
+add CODESECTION, PE_HEADER_SIZE
+GMI MODULEBASE, MODULESIZE
+mov MODULESIZE, $RESULT
+add MODULEBASE_and_MODULESIZE, MODULEBASE
+add MODULEBASE_and_MODULESIZE, MODULESIZE
+mov IMAGESIZE, [PE_HEADER+3C]
+add IMAGESIZE, PE_HEADER
+mov IMAGESIZE, [IMAGESIZE+50]
+mov IMAGESIZE_DIRECT, IMAGESIZE
+add IMAGESIZE, MODULEBASE
+////////////////////
+gmemi CODESECTION, MEMORYSIZE
+mov CODESECTION_SIZE, $RESULT
+add PE_HEADER, 03C
+mov PE_SIGNATURE, PE_HEADER
+sub PE_HEADER, 03C
+mov PE_SIZE, [PE_SIGNATURE]
+add PE_INFO_START, PE_HEADER
+add PE_INFO_START, PE_SIZE
+////////////////////
+mov PE_TEMP, PE_INFO_START
+////////////////////
+////////////////////
+mov SECTIONS, [PE_TEMP+06], 01
+itoa SECTIONS, 10.
+mov SECTIONS, $RESULT
+mov ENTRYPOINT, [PE_TEMP+028]
+mov BASE_OF_CODE, [PE_TEMP+02C]
+mov IMAGEBASE, [PE_TEMP+034]
+cmp IMAGEBASE, MODULEBASE
+je SAME_BASE_LOADED
+log "The file was loaded with a other imagebase!"
+mov IMAGEBASE, MODULEBASE
+////////////////////
+SAME_BASE_LOADED:
+mov SIZE_OF_IMAGE, [PE_TEMP+050]
+mov TLS_TABLE_ADDRESS, [PE_TEMP+0C0]
+mov TLS_TABLE_SIZE, [PE_TEMP+0C4]
+mov IMPORT_TABLE_ADDRESS, [PE_TEMP+080]
+mov IMPORT_TABLE_SIZE, [PE_TEMP+084]
+mov IMPORT_ADDRESS_TABLE, [PE_TEMP+0D8]
+mov IATSTORE, [PE_TEMP+0D8]
+add ENTRYPOINT, IMAGEBASE
+log ""
+log SCRIPTNAME, ""
+log LONG, ""
+log ""
+////////////////////
+////////////////////
+EIP_CHECK:
+cmp ENTRYPOINT, eip
+je START
+bphws ENTRYPOINT, "x"
+bp ENTRYPOINT
+esto
+bphwc
+bc
+jmp EIP_CHECK
+////////////////////
+START:
+call SCAN_DUMP_OVERLAY
+gmi eip, MODULEBASE
+mov APP_BASE, $RESULT
+pusha
+mov eax, APP_BASE
+mov ecx, eax
+mov edx, eax+[eax+3C]+80
+mov edx, [edx]
+mov IT, edx
+mov IT_BASE, edx+eax
+gmemi IT_BASE, MEMORYBASE
+mov IT_SEC, $RESULT
+gmemi IT_BASE, MEMORYSIZE
+mov IT_BASE_SIZE, $RESULT
+popa
+gmemi eip, MEMORYBASE
+mov S_BASE, $RESULT
+cmp S_BASE, IT_SEC
+je LOOP_0
+bprm IT_SEC, IT_BASE_SIZE
+esto
+bpmc
+jmp LOOP_0
+////////////////////
+LOOP_0:
+call STI_LOOP
+call STI_LOOP
+////////////////////
+LOOP:
+call STI_LOOP
+cmp [eip], 850F, 02
+je JNZ
+cmp [eip], E8, 01
+je VIRTUAL_ALLOC_DLL
+jmp LOOP
+////////////////////
+JNZ:
+gci eip, SIZE
+bp eip+$RESULT
+run
+bc
+gci eip, DESTINATION
+mov STOP_A, $RESULT
+cmp [STOP_A], 406A, 02
+je VIRTUAL_ALLOC_DLL
+cmp [STOP_A], 046A, 02
+je VIRTUAL_ALLOC_DLL
+///////////////////
+MODDERN_VERSIONS:
+find eip, #E8????????E9#
+cmp $RESULT, 00
+jne CALL_AND_JUMP
+pause
+pause
+///////////////////
+CALL_AND_JUMP:
+bp $RESULT+05
+run
+bc
+mov ENIGMASEC, [esp]
+find eip, #E8????????E9#
+cmp $RESULT, 00
+jne CALL_AND_JUMP_2
+pause
+pause
+///////////////////
+CALL_AND_JUMP_2:
+bp $RESULT+05
+run
+bc
+///////////////////
+LOOP_2:
+sti
+cmp [eip], 850F, 02
+jne LOOP_2
+gci eip, SIZE
+bp eip+$RESULT
+run
+bc
+jmp WALK
+///////////////////
+VIRTUAL_ALLOC_DLL:
+bphws VirtualFree, "x"
+run
+///////////////////
+WALK:
+bphwc
+mov ENIGMASEC, edi
+pusha
+mov edx, 00
+mov ebx, 00
+mov eax, ENIGMASEC
+mov ecx, eax+[eax+3C]
+mov edx, [ecx+0A0]
+mov ebx, [ecx+0A4]
+mov RE_START, edx
+mov RE_SIZE, ebx
+///////////////////
+EP_SCAN:
+mov EP, [ecx+28]
+mov IMAGE, [ecx+50]
+mov EP_CHECK, EP+ENIGMASEC
+cmp [EP_CHECK+3B], 0CC2, 02
+jne OTHER_VM
+cmp [EP_CHECK+36], E8, 01
+je DLL_EP
+pause
+pause
+///////////////////
+DLL_EP:
+mov DLL_EP, EP_CHECK+36
+gci DLL_EP, DESTINATION
+mov DLL_EP, $RESULT
+mov DLL_EP_RVA, DLL_EP-ENIGMASEC
+jmp WEITER
+///////////////////
+OTHER_VM:
+cmp [EP_CHECK+1B], E8, 01
+je NEW_VM
+mov DLL_EP_RVA, EP_CHECK-ENIGMASEC
+jmp WEITER
+pause
+pause
+///////////////////
+NEW_VM:
+mov DLL_EP, EP_CHECK+1B
+gci DLL_EP, DESTINATION
+mov DLL_EP, $RESULT
+mov DLL_EP_RVA, DLL_EP-ENIGMASEC
+jmp WEITER
+pause
+pause
+///////////////////
+WEITER:
+popa
+jmp READ_RE_SIZE_MANUALLY
+///////////////////
+READ_RE_SIZE_MANUALLY:
+pusha
+mov eax, ENIGMASEC+RE_START
+mov edx, 00
+alloc 1000
+mov RELOC_SEC, $RESULT
+mov [RELOC_SEC], #83380074098B480403C103D1EBF2909090#
+mov bak, eip
+mov eip, RELOC_SEC
+bp RELOC_SEC+0E
+run
+bc
+mov eip, bak
+free RELOC_SEC
+mov RE_SIZE, edx
+log ""
+log "---------- RELOC DATA ------------"
+log ""
+log RE_START, "RELOC START VA: "
+log RE_SIZE, "RELOC SIZE:     "
+log ""
+log "RELOCATION MANUALLY READING"
+log "----------------------------------"
+log ""
+popa
+jmp DUMPER
+///////////////////
+DUMPER:
+call READ_REGISTER
+call DLL_PE_BAK
+call READ_DLL_LOADER
+call ESP_READ
+mov LOADER_DUMPED, "No"
+cmp READ_DLL_LOADER, 00
+je FIRST_START_STEP
+pusha
+mov eax, ENIGMASEC+[ENIGMASEC+3C]
+add eax, 28
+mov [eax], DLL_EP_RVA
+mov [eax+7C], RE_SIZE
+popa
+///////////////////
+DUMPER2:
+alloc 1000
+mov DUMPSEC, $RESULT
+mov [DUMPSEC],
+#60546A40680010000068AAAAAAAAE897AA0CAAB8AAAAAAAA33D2668B50068BF081C600010000B90800
+00008BFE83C708F2A4664A6683FA00740583C620EBE76190909090#
+mov [DUMPSEC+0A], ENIGMASEC
+eval "call {VirtualProtect}"
+asm DUMPSEC+0E, $RESULT
+mov PE_TEMP, ENIGMASEC+[ENIGMASEC+3C]
+mov ENIGMASEC_SIZE, [PE_TEMP+50]
+mov [DUMPSEC+14], PE_TEMP
+bp DUMPSEC+40
+mov tmp, eip
+mov eip, DUMPSEC
+run
+bc
+mov eip, tmp
+free DUMPSEC
+eval "{DLL_NAME}"
+dm ENIGMASEC, ENIGMASEC_SIZE, $RESULT
+log ""
+log "Enigma DLL Loader was dumped to disk!"
+log ""
+mov LOADER_DUMPED, 00
+mov LOADER_DUMPED, "Yes"
+call ESP_WRITE
+call DLL_PE_BAK_WRITE
+call WRITE_REGISTER
+///////////////////
+FIRST_START_STEP:
+cmp eip, VirtualFree
+jne SECOND_START_STEP
+call RTR
+call STO_LOOP
+cmp TRY_OLD_UNPACK, 00
+je SECOND_START_STEP
+jmp TRY_STONE_OLD_UNPACK
+///////////////////
+SECOND_START_STEP:
+cmp TRY_OLD_UNPACK, 01
+je TRY_STONE_OLD_UNPACK
+BPHWS GetProcAddress, "x"
+esto
+bphwc
+////////////////////
+RTR_01:
+rtr
+cmp eip, GetProcAddress
+je RTR_01
+cmp [esi], 5A4D, 02
+je GET_DLL_DATA
+pause
+pause
+ret
+////////////////////
+GET_DLL_DATA:
+cmp READ_DLL_LOADER, 00
+je FOUND_SIGN
+mov   ENIGMASEC, esi
+cmp [esi], 5A4D, 02
+je MZ_RIGHT
+log "No MZ start found!"
+pause
+pause
+ret
+////////////////////
+MZ_RIGHT:
+jmp FOUND_SIGN
+call READ_REGISTER
+call DLL_PE_BAK
+call READ_DLL_LOADER
+call ESP_READ
+call DUMP_FIRST_DLL_FILE
+call ESP_WRITE
+call DLL_PE_BAK_WRITE
+call WRITE_REGISTER
+////////////////////
+FOUND_SIGN:
+cmp [esi], 5A4D, 02
+je MZ_RIGHT_2
+log "No MZ start found!"
+pause
+pause
+ret
+////////////////////
+MZ_RIGHT_2:
+mov   ENIGMASEC, esi
+gmemi ENIGMASEC, MEMORYBASE
+mov   ENIGMASEC, $RESULT
+mov   ENIGMASEC_BAK, $RESULT
+gmemi ENIGMASEC, MEMORYSIZE
+mov   LASTSEC, $RESULT
+add   LASTSEC, ENIGMASEC
+mov   NAME, [esp]
+gmemi NAME, MEMORYBASE
+mov   NAME, $RESULT
+call E_STRING_FIND
+cmp E_STRING_1, 00
+jne FOUND_NAME
+log ""
+eval "Can't find the ENIGMA string!"
+log $RESULT, ""
+log ""
+mov ENIGMA_VERSION_SCAN, "ENIGMA VERSION | Not Found!"
+jmp REGSHEME
+////////////////////
+FOUND_NAME:
+log ""
+log "---------- ENIGMA ABOUT ----------"
+pusha
+mov ebx, E_STRING_1
+mov  version, ebx
+add  version, 06
+mov  eax, [version], 01
+and eax, 000000FF
+inc  version
+mov  ecx, [version], 01
+and ecx, 000000FF
+mov SAVE, ecx
+cmp ecx, 09
+ja WITHOUT_ZERO
+shr ecx, 04
+cmp ecx, 00
+jne WITHOUT_ZERO
+mov ZERO, 01
+////////////////////
+WITHOUT_ZERO:
+mov ecx, SAVE
+itoa eax, 10.
+mov  A, $RESULT
+itoa ecx, 10.
+mov  B, $RESULT
+log ""
+cmp ZERO, 01
+je WITH_ZERO
+eval "ENIGMA VERSION | {A}.{B}"
+log  $RESULT, ""
+mov V1, $RESULT
+mov ENIGMA_VERSION_SCAN, 00
+mov ENIGMA_VERSION_SCAN, $RESULT
+jmp PROTECTED_AT
+////////////////////
+WITH_ZERO:
+eval "ENIGMA VERSION | {A}.0{B}"
+log  $RESULT, ""
+mov V1, $RESULT
+mov ENIGMA_VERSION_SCAN, 00
+mov ENIGMA_VERSION_SCAN, $RESULT
+jmp PROTECTED_AT
+////////////////////
+PROTECTED_AT:
+mov eax, [ebx+12]
+and eax, 0000FFFF
+mov ecx, [ebx+10]
+and ecx, 0000FFFF
+mov edx, [ebx+0E]
+and edx, 0000FFFF
+itoa eax, 10.
+mov E_SEC, $RESULT
+itoa ecx, 10.
+mov E_MIN, $RESULT
+itoa edx, 10.
+mov E_HOUR, $RESULT
+mov eax, [ebx+08]
+and eax, 0000FFFF
+mov ecx, [ebx+0A]
+and ecx, 0000FFFF
+mov edx, [ebx+0C]
+and edx, 0000FFFF
+itoa eax, 10.
+mov E_YEAR, $RESULT
+itoa ecx, 10.
+mov E_MONTH, $RESULT
+itoa edx, 10.
+mov E_DAY, $RESULT
+eval "Protected at:    {E_DAY}.{E_MONTH}.{E_YEAR} - {E_HOUR}:{E_MIN}:{E_SEC}"
+mov PROTECTED_AT, $RESULT
+log $RESULT, ""
+mov eax, 00
+mov eax, [ebx+28]
+and eax, 000000FF
+////////////////////
+E_LICENSE_CHECK:
+cmp eax, 00
+jne L_2
+mov E_LIC, "DEMO"
+jmp L_END
+////////////////////
+L_2:
+cmp eax, 01
+jne L_3
+mov E_LIC, "Personal License"
+jmp L_END
+////////////////////
+L_3:
+cmp eax, 02
+jne L_4
+mov E_LIC, "Company License"
+jmp L_END
+////////////////////
+L_4:
+cmp eax, 03
+jne L_NOT_FOUND
+mov E_LIC, "Custom"
+jmp L_END
+////////////////////
+L_NOT_FOUND:
+mov E_LIC, "UNKNWON"
+jmp L_END
+////////////////////
+L_END:
+eval "Used License:    {E_LIC}"
+log $RESULT, ""
+mov eax, MODULEBASE
+mov edx, [eax+3C]
+add edx, eax
+mov ebx, [edx+06]
+add edx, 0F8
+and ebx, 0000FFFF
+////////////////////
+CHECK_ALL_SECTIONS:
+cmp ebx, 00
+je ALL_SECTION_CHECKED
+cmp [edx+10], 00
+je CHECK_NEXT_SEC
+mov edi, 00
+mov edi, [edx+0C]+eax
+find edi, #01AB5743D38C21005FFFE9B7448A6215010000003200000001000000#
+cmp $RESULT, 00
+jne WATER_CONTEXT_FOUND
+////////////////////
+CHECK_NEXT_SEC:
+add edx, 28
+dec ebx
+jmp CHECK_ALL_SECTIONS
+////////////////////
+ALL_SECTION_CHECKED:
+log ""
+log "Watermark not Found!"
+log ""
+mov WATERMARK_SCAN, "Not Found!"
+jmp E_END_READ
+////////////////////
+WATER_CONTEXT_FOUND:
+mov WATERMARK_SCAN, 00
+mov WATERMARK_SCAN, "Yes"
+mov eax, $RESULT
+mov ecx, $RESULT
+mov edx, [eax+2C]
+mov E_TYPE, eax
+cmp edx, 02
+je E_PRIVATE_TYPE
+cmp edx, 01
+je E_PUBLIC_TYPE
+mov E_TYPE, "Unknown"
+log "Watermark-Type is unknown!"
+jmp E_PRIVATE_ADD
+////////////////////
+E_PRIVATE_TYPE:
+mov E_TYPE, "Private"
+jmp E_PRIVATE_ADD
+////////////////////
+E_PUBLIC_TYPE:
+mov E_TYPE, "Public"
+jmp E_PRIVATE_ADD
+////////////////////
+E_PRIVATE_ADD:
+mov edx, eax
+add edx, 2C
+add edx, 04
+eval "Watermark-Type:  {E_TYPE}"
+log $RESULT, ""
+mov esi, [edx]
+add edx, 04
+readstr [edx], esi
+mov E_NAME, $RESULT
+cmp E_TYPE, "Private"
+jne E_1
+mov E_NAME, 00
+mov E_NAME, "Crypted"
+////////////////////
+E_1:
+eval "Watermark-Name:  {E_NAME}"
+log $RESULT, ""
+add edx, esi
+cmp [edx], 00
+jne D1
+call NO_E_TEXT_FOUND
+jmp D2
+////////////////////
+D1:
+mov esi, [edx]
+add edx, 04
+readstr [edx], esi
+mov E_TEXT, $RESULT
+cmp E_TYPE, "Private"
+jne E_2
+mov E_TEXT, 00
+mov E_TEXT, "Crypted"
+////////////////////
+E_2:
+eval "Watermark-Text:  {E_TEXT}"
+log $RESULT, ""
+add edx, esi
+////////////////////
+D2:
+cmp [edx], 00
+je NO_E_ATTACH_FILE
+mov esi, [edx]
+add edx, 04
+readstr [edx], esi
+mov E_FILE, $RESULT
+cmp E_TYPE, "Private"
+jne E_3
+mov E_FILE, 00
+mov E_FILE, "Crypted"
+////////////////////
+E_3:
+eval "Watermark-File:  {E_FILE}"
+log $RESULT, ""
+add edx, esi
+mov esi, [edx]
+add edx, 04
+itoa esi, 10.
+mov E_SIZE, $RESULT
+cmp E_TYPE, "Private"
+je E_4
+eval "{E_FILE}"
+dm edx, esi, $RESULT
+eval "Attachedfile-Size: {E_SIZE}"
+log $RESULT, ""
+log "Attached File was dumped!"
+jmp E_END_READ
+////////////////////
+E_4:
+eval "Attachedfile-Size:  {E_SIZE}"
+log $RESULT, ""
+jmp E_END_READ
+////////////////////
+NO_E_ATTACH_FILE:
+log "No Attached  File Found!"
+jmp E_END_READ
+////////////////////
+NO_E_TEXT_FOUND:
+log "No Watermark Text Found!"
+add edx, 04
+ret
+////////////////////
+E_END_READ:
+log "----------------------------------"
+log ""
+popa
+////////////////////
+REGSHEME:
+////////////////////
+STARTOFALL:
+mov REGSHEME_SCAN, "Not Found!"
+find ENIGMASEC, #85C00F95C08B??????????8B??8?#
+cmp $RESULT, 00
+je CHECK_ENIGMA_VM
+mov REG1, $RESULT+02
+find REG1, #85C00F95C08B??????????8B??8?#
+mov REG2, $RESULT+02
+gci REG1, COMMAND
+mov REG1_COM, $RESULT
+gci REG2, COMMAND
+mov REG2_COM, $RESULT
+mov REGSHEME_SCAN, "Yes"
+log ""
+log "Possible used RegSheme found!"
+log ""
+eval "Address: {REG1} - {REG1_COM}"
+log $RESULT, ""
+eval "Address: {REG2} - {REG2_COM}"
+log $RESULT, ""
+log ""
+log ""
+////////////////////
+CHECK_ENIGMA_VM:
+find ENIGMASEC, #F7C720000000#
+cmp $RESULT, 00
+jne OLD_ENIGMA_APPS
+////////////////////
+START_MODERN_TARGET:
+call STO_LOOP
+mov IAT, ebp
+////////////////////
+JMP_EAX:
+find eip, #FFE0#
+cmp $RESULT, 0
+je CALL_EAX
+mov EAXA, $RESULT
+jmp SET_R32
+////////////////////
+CALL_EAX:
+find eip, #FFD0#
+cmp $RESULT, 00
+jne R32_FOUND
+eval "{SCRIPTNAME} {L2}{LONG} {L1}Your target seems to be a older version of Enigma
+1.x - 1.3! {L1}Set >>> TRY_OLD_UNPACK <<< to >> 01 << and try again! \r\n\r\
+n{LINES} \r\n{MY}"
+msg $RESULT
+log "Your target seems to be a older version of Enigma 1.x - 1.3!"
+log "Set TRY_OLD_UNPACK to 01 and try again!"
+pause
+ret
+jmp TRY_STONE_OLD_UNPACK
+pause
+ret
+pause
+////////////////////
+R32_FOUND:
+mov EAXA, $RESULT
+////////////////////
+SET_R32:
+mov VERSION_TYPE, "MODERN"
+bphws EAXA, "x"
+esto
+bphwc EAXA
+call STI_LOOP
+find eip, #C20C00#
+cmp $RESULT, 00
+jne RET_FOUND
+find eip, #E8????????E8#
+cmp $RESULT, 00
+jne NEW_VM_FOUND
+pause
+pause
+ret
+////////////////////
+NEW_VM_FOUND:
+mov NEW_VM, 01
+////////////////////
+RET_FOUND:
+mov ret, $RESULT
+bphws ret, "x"
+esto
+bphwc ret
+////////////////////
+FIND_JMP_TABLE:
+find ENIGMASEC, #609CB201BE00000000#
+cmp $RESULT, 00
+jne FOUND_FIRST_ROUTINE
+pause
+pause
+pause
+////////////////////
+FOUND_FIRST_ROUTINE:
+mov VM_OUT_A, $RESULT
+add VM_OUT_A, 02
+find VM_OUT_A, #609CB201BE00000000#
+sub VM_OUT_A, 02
+cmp $RESULT, 00
+jne FOUND_SECOND_ROUTINE
+pause
+pause
+pause
+////////////////////
+FOUND_SECOND_ROUTINE:
+mov VM_INT, $RESULT
+mov line, 00
+eval "JMP 0{VM_INT}"
+findcmd ENIGMASEC, $RESULT
+////////////////////
+CALC:
+mov BAK, 00
+gref line
+cmp $RESULT, 00
+je finished
+mov BAK, $RESULT
+cmp [BAK-05], 68, 01
+je VM_TABLE_START
+inc line
+jmp CALC
+////////////////////
+VM_TABLE_START:
+sub BAK, 5
+mov JTABLE, BAK
+mov $RESULT, JTABLE
+jmp GET_INTERN_VM_DATA
+////////////////////
+finished:
+popa
+log "Intern VM not used!"
+pause
+pause
+pause
+ret
+////////////////////
+OLD_VM:
+find ENIGMASEC, #6800000000E9#
+cmp $RESULT, 00
+jne GET_INTERN_VM_DATA
+log ""
+log "No VM JUMP TABLE FOUND in ENIGMASECTION!"
+log ""
+pause
+pause
+jmp K2
+////////////////////
+GET_INTERN_VM_DATA:
+mov JTABLE, $RESULT
+add JTABLE, 05
+gci JTABLE, DESTINATION
+mov LOOP,   $RESULT
+sub JTABLE, 05
+findop LOOP,#E8#
+mov LOOP,   $RESULT
+inc LOOP
+find LOOP,  #E8#
+mov LOOP,   $RESULT
+inc LOOP
+find LOOP,  #E8#
+mov LOOP,   $RESULT
+gci LOOP,   DESTINATION
+mov LOOP,   $RESULT
+find LOOP,  #83F8??77#
+cmp $RESULT, 00
+je VERSION_OLD
+log ""
+log "Enigma 1.96 - 3.70+ detected"
+jmp GET_VM_POINTER
+////////////////////
+VERSION_OLD:
+log ""
+log "Enigma 1.7 - 1.91  detected"
+log ""
+////////////////////
+GET_VM_POINTER:
+mov E_INTERN_VM, 00
+mov E_INTERN_VM, "Yes"
+find LOOP, #A1??????????04F083C0FD83F8#
+cmp $RESULT, 00
+jne OLDER_VM_USED
+log ""
+log "Found no newer ENIGMA VM so your target used a older VM which is not supported
+by the DV plugin!"
+log ""
+mov OLDER_VM_USED, 01
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Found no newer ENIGMA VM so your target used
+a older VM which is not supported by the DV plugin! \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+pause
+pause
+ret
+pause
+////////////////////
+OLDER_VM_USED:
+add LOOP, 30
+find LOOP, #A1????????8B#
+cmp $RESULT, 00
+jne LOG_POINTER
+pause
+pause
+ret
+////////////////////
+LOG_POINTER:
+mov pointer,    $RESULT
+mov pointerin, [pointer+1]
+mov pointerin, [pointerin]
+log ""
+log "---------- VM DATA ----------"
+log ""
+log JTABLE, "JUMP TABLE AT: "
+log pointerin, "VM TABLE AT:   "
+log ENIGMASEC, "ENIGMASEC:     "
+log ""
+log JTABLE, ""
+log pointerin, ""
+log ENIGMASEC, ""
+log "-----------------------------"
+mov JTABLE_IN, [JTABLE]
+call FIX_INTERN_VM
+call ESP_WRITE
+call WRITE_REGISTER
+mov eip, bak
+////////////////////
+FIND_VM_OEP:
+find ENIGMASEC, #E8????????FF45F4FF4DF075D0#
+cmp $RESULT, 00
+je MODERN_SCAN_2
+mov EXTRA_DLL_P, $RESULT+0D
+mov EXTRA_1, EXTRA_DLL_P
+bp EXTRA_DLL_P
+bpgoto EXTRA_DLL_P, MODERN_EXTRA_FILES
+log ""
+log "Found extra files sign 1!"
+log ""
+mov THREE_VERSION, 01
+find EXTRA_DLL_P, #E8????????FF45F4FF4DF075D0#
+cmp $RESULT, 00
+je NO_EXTRA_FILES_MODERN
+mov EXTRA_DLL_P_2, $RESULT
+// findop EXTRA_DLL_P_2, #E8#
+mov EXTRA_DLL_P_2, $RESULT+0D
+mov EXTRA_2, EXTRA_DLL_P_2
+bp EXTRA_DLL_P_2
+bpgoto EXTRA_DLL_P_2, MODERN_EXTRA_FILES
+log ""
+log "Found extra files sign 2!"
+log ""
+mov THREE_VERSION, 01
+// jmp NO_EXTRA_FILES_MODERN
+//-----------------------
+////////////////////
+MODERN_SCAN_2:
+find ENIGMASEC, #C74704FFFFFFFF837DEC00????????????????????6A??#
+cmp $RESULT, 00
+je NO_EXTRA_FILES_MODERN
+mov EXTRA_DLL_P, $RESULT
+findop EXTRA_DLL_P, #E8#
+mov EXTRA_DLL_P, $RESULT
+mov EXTRA_3, EXTRA_DLL_P
+bp EXTRA_DLL_P
+bpgoto EXTRA_DLL_P, MODERN_EXTRA_FILES
+log ""
+log "Found extra files sign 3!"
+log ""
+mov THREE_VERSION, 01
+find EXTRA_DLL_P, #C74704FFFFFFFF837DEC00????????????????????6A??#
+cmp $RESULT, 00
+je NO_EXTRA_FILES_MODERN
+mov EXTRA_DLL_P_2, $RESULT
+findop EXTRA_DLL_P_2, #E8#
+mov EXTRA_DLL_P_2, $RESULT
+mov EXTRA_4, EXTRA_DLL_P_2
+bp EXTRA_DLL_P_2
+bpgoto EXTRA_DLL_P_2, MODERN_EXTRA_FILES
+log ""
+log "Found extra files sign 4!"
+log ""
+mov THREE_VERSION, 01
+//-----------------------
+////////////////////
+NO_EXTRA_FILES_MODERN:
+find ENIGMASEC, #8B08C601E9#
+cmp $RESULT, 00
+je NO_VM_OEP
+mov VMOEP, $RESULT
+find VMOEP, #C601FFFF00#
+cmp $RESULT, 00
+je NO_VM_OEP
+mov VMOEP, $RESULT
+log ""
+log "VM OEP SIGN FOUND!"
+bphws VMOEP
+jmp SEARCH_JMP
+////////////////////
+NO_VM_OEP:
+log ""
+log "NO VM OEP SIGN FOUND!"
+pause
+pause
+pause
+////////////////////
+SEARCH_JMP:
+pusha
+mov eax, JTABLE
+////////////////////
+FIND_JUMP:
+cmp [eax], E9, 01
+je JUMP_FOUND
+inc eax
+jmp FIND_JUMP
+////////////////////
+JUMP_FOUND:
+gci eax, DESTINATION
+gmemi $RESULT, MEMORYBASE
+mov IN_BASE, $RESULT
+popa
+find IN_BASE, #F7C720000000#
+cmp $RESULT, 00
+jne FOUND_TEST_COMMAND
+log ""
+log "Cant find TEST EDI,20"
+pause
+pause
+ret
+////////////////////
+FOUND_TEST_COMMAND:
+mov ED, $RESULT
+find ED, #8B????????????89??????8?C3#
+cmp $RESULT, 00
+jne T2
+find ED, #8B????????????89????????????8?C3#
+cmp $RESULT, 00
+jne T2
+pause
+pause
+////////////////////
+T2:
+mov API,     $RESULT
+mov API2,    [API+03]
+sub API2,    04
+mov [API+03],API2
+find IN_BASE, #2B????3D00F?0000#
+cmp $RESULT, 00
+jne FIND_SECOND_ONE
+pause
+pause
+////////////////////
+FIND_SECOND_ONE:
+mov CMPS, $RESULT
+pusha
+mov eax, CMPS
+add eax, 08
+find eax, #2B????3D00F?0000#
+cmp $RESULT, 00
+je NO_SECOND_ONE_FOUND
+mov CMPS_2, $RESULT
+mov eax, $RESULT
+////////////////////
+PRE_LOOP_1_A:
+preop eax
+mov BAK, $RESULT
+cmp [BAK], 850F, 02
+mov eax, BAK
+jne PRE_LOOP_1_A
+mov MJ_1_A, BAK
+bphws MJ_1_A
+////////////////////
+PRE_LOOP_2_A:
+preop eax
+mov BAK, $RESULT
+cmp [BAK], 840F, 02
+mov eax, BAK
+jne PRE_LOOP_2_A
+mov MJ_2_A, BAK
+mov jump_A, MJ_2_A
+find MJ_1_A, #3?C05?5?5?#
+cmp $RESULT, 00
+jne FOUND_ENDROUTINE_A
+pause
+pause
+ret
+////////////////////
+FOUND_ENDROUTINE_A:
+mov ret_A, $RESULT+05
+popa
+jmp COMPARE_SIGN
+////////////////////
+NO_SECOND_ONE_FOUND:
+popa
+////////////////////
+COMPARE_SIGN:
+pusha
+mov eax, CMPS
+////////////////////
+PRE_LOOP_1:
+preop eax
+mov BAK, $RESULT
+cmp [BAK], 850F, 02
+mov eax, BAK
+jne PRE_LOOP_1
+mov MJ_1, BAK
+////////////////////
+PRE_LOOP_2:
+preop eax
+mov BAK, $RESULT
+cmp [BAK], 840F, 02
+mov eax, BAK
+jne PRE_LOOP_2
+mov MJ_2, BAK
+mov jump, MJ_2
+popa
+bphws MJ_1
+find MJ_1, #3?C05?5?5?#
+cmp $RESULT, 00
+jne FOUND_ENDROUTINE
+pause
+pause
+ret
+////////////////////
+FOUND_ENDROUTINE:
+mov ret, $RESULT+05
+////////////////////
+MAGIC_RUN:
+cmp REG_OVER, 01
+je MAGIC_RUN_2
+cmp THREE_VERSION, 01
+jne MAGIC_RUN_2
+cmp BYPASS_REGSHEME, 01
+jne CHECK_HWID_ON
+////////////////////
+SET_REG_BYPASS:
+cmp REG1, 00
+je MAGIC_RUN_2
+cmp REG2, 00
+je MAGIC_RUN_2
+bphws REG1
+bphws REG2
+bpgoto REG1, MANUALLY_SETNE_2
+bpgoto REG2, MANUALLY_SETNE_2
+jmp MAGIC_RUN_2
+////////////////////
+CHECK_HWID_ON:
+cmp CHANGE_HWID, 01
+jne MAGIC_RUN_2
+////////////////////
+SET_HWID_BYPASS:
+cmp REG_OVER, 01
+je MAGIC_RUN_2
+bphwc REG1
+bphwc REG2
+find ENIGMASEC, #66D3E0660BD8#
+cmp $RESULT, 00
+je MAGIC_RUN_2
+mov HWID, $RESULT
+add HWID, 10
+find HWID, #66D3E0660BD8#
+cmp $RESULT, 00
+je U2_T
+mov HWID, $RESULT
+mov E_HWID_SCAN, 00
+mov E_HWID_SCAN, "Yes"
+jmp U3_T
+////////////////////
+U2_T:
+sub HWID, 10
+////////////////////
+U3_T:
+find HWID, #EB238B07#
+cmp $RESULT, 00
+jne V1A_T
+pause
+pause
+////////////////////
+V1A_T:
+mov stop, $RESULT
+add stop, 02
+bphws stop, "x"
+bpgoto stop, HWID_ASK
+jmp MAGIC_RUN_2
+////////////////////
+HWID_ASK:
+cmp ENTERED, 01
+je xx1_T
+ask "enter you HWID without - and + quotes now as string together"
+mov temp, $RESULT
+mov temp, temp
+buf temp
+mov temp, temp
+mov ENTERED, 01
+////////////////////
+xx1_T:
+mov store, edi
+mov store, [store]
+mov [store], temp
+esto
+cmp eip, stop
+je xx1_T
+mov E_HWID_PATCHED, 00
+mov E_HWID_PATCHED, "Yes"
+mov REG_OVER, 01
+bphwc stop
+jmp MAGIC_RUN_3
+////////////////////
+MAGIC_RUN_2:
+esto
+////////////////////
+MAGIC_RUN_3:
+bc
+cmp eip, MJ_1
+je MJ_1_STOP
+bphwc MJ_1_A
+cmp eip, MJ_1_A
+je SECOND_MAGIC_STOP
+pause
+pause
+////////////////////
+SECOND_MAGIC_STOP:
+bphwc MJ_1
+bphwc MJ_2
+mov MJ_1, MJ_1_A
+mov MJ_2, MJ_2_A
+mov ret, ret_A
+mov jump, jump_A
+jmp MJ_1_STOP
+pause
+pause
+////////////////////
+MJ_1_STOP:
+bphwc MJ_1
+bphwc MJ_2
+readstr [eip], 06
+mov store, $RESULT
+buf store
+mov [eip], E990 ,02
+mov first, eip
+call SPECIAL_ANTI_DEBUG
+jmp T4A
+bphws IAT, "r"
+esto
+esto
+esto
+bphwc
+gopi eip, 1, ADDR
+mov IAT, $RESULT
+bphws IAT, "r"
+esto
+bphwc
+cmp [eip+08], 850F, 02
+je N1
+cmp [eip+07], 850F, 02
+je N2
+pause
+pause
+////////////////////
+N2:
+bphws eip+07, "x"
+jmp NORM
+////////////////////
+N1:
+bphws eip+08, "x"
+jmp NORM
+////////////////////
+NORM:
+run
+bphwc
+readstr [eip], 06
+mov store, $RESULT
+buf store
+mov [eip], E990 ,02
+mov first, eip
+cmp [eip-27], 840F, 02
+je SA1
+cmp [eip-20], 840F, 02
+je SA2
+pause
+pause
+////////////////////
+SA2:
+mov jump, eip-20
+jmp REMO
+////////////////////
+SA1:
+mov jump, eip-27
+////////////////////
+REMO:
+find eip, #8BE55DC3#
+cmp $RESULT, 00
+jne T3
+pause
+pause
+////////////////////
+T3:
+mov ret, $RESULT
+add ret, 03
+////////////////////
+T4A:
+bphws ret, "x"
+esto
+bphwc
+cmp eip, VMOEP
+jne FG
+bc
+jmp NEWOEP
+////////////////////
+FG:
+mov [first], store
+bphws jump, "x"
+bphws VMOEP, "x"
+cmp BYPASS_REGSHEME, 01
+jne GO_HWID
+cmp REG_OVER, 01
+je GO_HWID
+cmp THREE_VERSION, 01
+je GO_HWID
+bphws REG1
+bphws REG2
+bpgoto REG1, MANUALLY_SETNE
+bpgoto REG2, MANUALLY_SETNE
+////////////////////
+GO_HWID:
+cmp CHANGE_HWID, 01
+jne U1
+cmp REG_OVER, 01
+je U1
+cmp THREE_VERSION, 01
+je U1
+bphwc REG1
+bphwc REG2
+find ENIGMASEC, #66D3E0660BD8#
+cmp $RESULT, 0
+je U1
+mov HWID, $RESULT
+add HWID, 10
+find HWID, #66D3E0660BD8#
+cmp $RESULT, 0
+je U2
+mov HWID, $RESULT
+mov E_HWID_SCAN, 00
+mov E_HWID_SCAN, "Yes"
+jmp U3
+////////////////////
+U2:
+sub HWID, 10
+////////////////////
+U3:
+find HWID, #EB238B07#
+cmp $RESULT, 0
+jne V1A
+pause
+pause
+////////////////////
+V1A:
+mov stop, $RESULT
+add stop, 2
+bphws stop, "x"
+////////////////////
+U1:
+call FIND_LATEST_RD
+////////////////////
+U1A:
+esto
+bphwc L_RD
+jmp UMA
+////////////////////
+MANUALLY_SETNE:
+log ""
+log "Regsheme was simple patched!"
+log ""
+mov E_REGSHEME_PATCH, 00
+mov E_REGSHEME_PATCH, "Yes"
+bphwc REG1
+bphwc REG2
+mov eax, 01
+preop eip
+mov eip, $RESULT
+jmp U1A
+////////////////////
+MANUALLY_SETNE_2:
+log ""
+log "Regsheme was simple patched!"
+log ""
+mov E_REGSHEME_PATCH, 00
+mov E_REGSHEME_PATCH, "Yes"
+bphwc REG1
+bphwc REG2
+mov eax, 01
+preop eip
+mov eip, $RESULT
+mov REG_OVER, 01
+jmp MAGIC_RUN
+////////////////////
+UMA:
+cmp eip, VMOEP
+jne AAAA
+bc
+bphwc
+jmp NEWOEP
+////////////////////
+AAAA:
+cmp eip, stop
+jne Z1
+ask "enter you HWID without - and + quotes now as string together"
+mov temp, $RESULT
+mov temp, temp
+buf temp
+mov temp, temp
+////////////////////
+xx1:
+mov store, edi
+mov store, [store]
+mov [store], temp
+esto
+cmp eip, stop
+je xx1
+mov E_HWID_PATCHED, 00
+mov E_HWID_PATCHED, "Yes"
+////////////////////
+Z1:
+bc
+bphwc
+mov first, eip
+readstr [eip], 6
+mov store, $RESULT
+buf store
+mov [eip], E990 ,02
+bphws ret, "x"
+esto
+bphwc
+mov [first], store
+call RTR
+call RTR
+////////////////////
+EXTRA_OEP_TO_ENTER:
+bphws VMOEP, "x"
+find ENIGMASEC, #5?5?5?5?5?BD#
+cmp $RESULT, 00
+je NO_IAT_TABLE
+mov E_IAT_TABLE, [$RESULT+06]
+mov E_IAT_START, [E_IAT_TABLE]
+mov API_COUNT, [E_IAT_START-04]
+find ENIGMASEC, #8B0D????????03118902#
+cmp $RESULT, 00
+je NO_IAT_TABLE
+mov E_REDI, $RESULT
+pusha
+mov eax, E_REDI
+mov E_U_BASE, [E_REDI+02]
+add eax, 0A
+bphws E_REDI
+bpgoto E_REDI, E_REDIRECTION
+find eax, #8B0D????????03118902#
+cmp $RESULT, 00
+jne SECOND_REDI_FOUND
+jmp AFTER_E_REDI
+////////////////////
+SECOND_REDI_FOUND:
+mov E_REDI_2, $RESULT
+mov E_U_BASE_2, [E_REDI_2+02]
+bphws E_REDI_2
+bpgoto E_REDI_2, E_REDIRECTION
+////////////////////
+AFTER_E_REDI:
+popa
+////////////////////
+NO_IAT_TABLE:
+jmp 123C
+///////////////////
+find ENIGMASEC, #8B45D88B55F0#
+cmp $RESULT, 00
+jne T4
+find ENIGMASEC, #8BC0538BD88BC3E8????????E8????????8BD08BC3E8????????5B#
+cmp $RESULT, 00
+jne NEW
+pause
+pause
+////////////////////
+NEW:
+mov ADDR, $RESULT
+add ADDR, 11
+jmp 123
+////////////////////
+T4:
+mov ADDR, $RESULT
+////////////////////
+T5:
+PREOP ADDR
+mov ADDR, $RESULT
+cmp [ADDR], E8, 01
+jne T5
+////////////////////
+T6:
+PREOP ADDR
+mov ADDR, $RESULT
+cmp [ADDR], E8, 01
+jne T6
+////////////////////
+T7:
+PREOP ADDR
+mov ADDR, $RESULT
+cmp [ADDR], E8, 01
+jne T7
+add ADDR, 05
+////////////////////
+123:
+cmp VMOEP, 0
+je 123B
+bphws VMOEP
+////////////////////
+123B:
+bphws ADDR, "x"
+////////////////////
+123C:
+esto
+cmp E_REDISEC, 00
+je NO_RD_PATCHED
+mov [E_REDI], E_COM_BAK
+free E_REDISEC
+cmp E_VM1, 00
+je NO_RD_PATCHED
+mov [E_VM1], E_VM1_BAK
+cmp E_VM2, 00
+je NO_RD_PATCHED
+mov [E_VM2], E_VM2_BAK
+////////////////////
+NO_RD_PATCHED:
+bphwc
+cmp eip, VMOEP
+jne OEPASK
+////////////////////
+NEWOEP:
+mov VMOEP, ecx
+bc
+call RTR
+mov VMOEPBAK, VMOEP
+////////////////////
+SCHLOOP:
+call EXIT_PATCH
+bphws VMOEP
+bp VMOEP
+esto
+bphwc
+bc
+gmemi eax, MEMORYBASE
+cmp $RESULT, 00
+jne VM_OEP_SAME
+mov tmp, eip
+mov tmp2, eip
+sub tmp, 140
+////////////////////
+FIND_OEP_POINTER:
+find tmp, #B8#
+cmp $RESULT, 00
+jne OEP_POINTER
+pause
+pause
+ret
+////////////////////
+OEP_POINTER:
+mov tmp, $RESULT
+cmp tmp, tmp2
+jb LOWER_IT
+mov tmp, eip
+mov tmp2, eip
+sub tmp, 140
+mov MAK_LOW, 01
+jmp FIND_OEP_POINTER
+pause
+pause
+////////////////////
+LOWER_IT:
+pusha
+mov eax, [tmp+01]
+mov ecx, MODULEBASE
+mov edx, IMAGESIZE
+cmp MAK_LOW, 01
+jne NORMAL_CHECKI
+gmemi eax, MEMORYBASE
+cmp $RESULT, 00
+je NORMAL_CHECKI
+mov tmp, eax
+popa
+jmp OEP_POINTER_FOUND
+////////////////////
+NORMAL_CHECKI:
+cmp eax, ecx
+jb WRONG_POINTER
+cmp eax, edx
+ja WRONG_POINTER
+mov tmp, eax
+popa
+jmp OEP_POINTER_FOUND
+////////////////////
+WRONG_POINTER:
+popa
+add tmp, 05
+jmp FIND_OEP_POINTER
+////////////////////
+OEP_POINTER_FOUND:
+mov eax, tmp
+////////////////////
+VM_OEP_SAME:
+call STI
+gmemi eip, MEMORYBASE
+cmp ENIGMASEC, $RESULT
+jne BASE_OEP
+find ENIGMASEC, #558BECA1????????8B5510528B550C528B550852FFD05DC20C00#
+cmp $RESULT, 00
+je NO_OEP_BIN
+mov OEP_STORE, [$RESULT+04]
+mov OEP_STORE, [OEP_STORE]
+bphwc
+bc
+bphws OEP_STORE
+bp OEP_STORE
+run
+bphwc
+bc
+jmp BASE_OEP
+////////////////////
+NO_OEP_BIN:
+findop eip, #E8#
+go $RESULT
+call STI
+findop eip, #FF#
+go $RESULT
+call STI
+jmp BASE_OEP
+pause
+pause
+pause
+ret
+////////////////////
+BASE_OEP:
+cmt eip, "<-- OEP"
+jmp OVERS
+////////////////////
+OEPASK:
+bc
+mov ENIGMA_OEP, eax
+gmemi eax, MEMORYBASE
+cmp $RESULT, CODESECTION
+je OEP_IN_CODE
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Found used ENIGMA OEP address at:
+{ENIGMA_OEP} {L1}OEP address is not located in the main target! {L1}Just search a
+new free OEP address which you can use! {L1}So do you want to enter a new own OEP
+address? \r\n\r\n{LINES} \r\n{MY}"
+msgyn $RESULT
+cmp $RESULT, 01
+jne OEP_IN_CODE
+ask "Enter new OEP address in EAX and ECX and then resume script!"
+mov eax, $RESULT
+mov ecx, $RESULT
+pause
+////////////////////
+OEP_IN_CODE:
+mov NEW_OEP, eax
+mov OEP, eax
+call VP_CODESEC
+mov eip, bak
+bphws OEP, "x"
+bphws VMOEP
+esto
+cmp eip, VMOEP
+jne DIRECT_OEP_STOP
+////////////////////
+VMOEP_STOP:
+bc
+bphwc
+mov REG_STOP, ecx
+call EXIT_PATCH
+bphws REG_STOP
+esto
+////////////////////
+NEXT_CHECK:
+cmp eip, OEP
+je DIRECT_OEP_STOP
+cmp eip, REG_STOP
+je REG_STOP
+pause
+pause
+////////////////////
+REG_STOP:
+cmp eax, OEP
+je REG_SAME_OEP
+mov eip, OEP
+bphwc
+jmp END_01
+////////////////////
+REG_SAME_OEP:
+bphwc
+call STO_LOOP
+jmp END_01
+////////////////////
+DIRECT_OEP_STOP:
+bphwc
+////////////////////
+END_01:
+pause
+pause
+pause
+////////////////////
+OVERS:
+bphwc
+cmp VM_OUT_A, 00
+je NO_OUT_VM_USED
+log ""
+log "Outer VM Routine Found!"
+log ""
+mov E_OUTER_VM, "No"
+mov E_OUTER_VM, "Yes"
+mov line, 00
+eval "JMP 0{VM_OUT_A}"
+findcmd LASTSEC, $RESULT
+////////////////////
+CALC_2:
+mov BAK, 00
+gref line
+cmp $RESULT, 00
+je finished_2
+mov BAK, $RESULT
+cmp [BAK-05], 68, 01
+je VM_TABLE_START_2
+inc line
+jmp CALC_2
+////////////////////
+VM_TABLE_START_2:
+sub BAK, 5
+mov JTABLE, BAK
+mov $RESULT, JTABLE
+mov E_OUTER_USED, 00
+mov E_OUTER_USED, "Yes"
+jmp VM2
+////////////////////
+finished_2:
+log ""
+log "Outer VM not used!"
+log ""
+mov E_OUTER_USED, 00
+mov E_OUTER_USED, "No"
+////////////////////
+NO_OUT_VM_USED:
+jmp ENDE
+////////////////////
+find LASTSEC, #6800000000E9#
+cmp $RESULT, 00
+jne VM2
+msg "NO second VM table found in the last section!"
+pause
+pause
+ret
+////////////////////
+VM2:
+mov JTABLE, $RESULT
+add JTABLE, 05
+gci JTABLE, DESTINATION
+mov LOOP, $RESULT
+sub JTABLE, 05
+findop LOOP, #E8#
+mov LOOP, $RESULT
+inc LOOP
+find LOOP, #E8#
+mov LOOP, $RESULT
+inc LOOP
+find LOOP, #E8#
+mov LOOP, $RESULT
+gci LOOP, DESTINATION
+mov LOOP, $RESULT
+add LOOP, 30
+find LOOP, #A1??????????04F083C0FD83F8#
+cmp $RESULT, 00
+jne R3A
+log "Found no newer ENIGMA VM so your target used a older VM which is not supported
+by the DV plugin!"
+log ""
+mov OLDER_VM_USED, 01
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Found no newer ENIGMA VM so your target used
+a older VM which is not supported by the DV plugin! \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+pause
+pause
+ret
+pause
+////////////////////
+R2A:
+find LOOP, #A1????????8B#
+cmp $RESULT, 0
+jne R3A
+pause
+pause
+////////////////////
+R3A:
+mov pointer, $RESULT
+mov pointerin, [pointer+1]
+mov pointerin, [pointerin]
+log ""
+log "---------- VM DATA 2 ----------"
+log ""
+log JTABLE, "JUMP TABLE AT: "
+log pointerin, "VM TABLE AT:   "
+log ENIGMASEC, "ENIGMASEC:     "
+log ""
+log JTABLE, ""
+log pointerin, ""
+log ENIGMASEC, ""
+log "-------------------------------"
+log ""
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Second VM found! \r\n\r\nJMP TABLE {JTABLE}
+| VM TABLE {pointerin} | SECTION | {LASTSEC} \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+call FIX_INTERN_VM_2
+pause
+pause
+ret
+pause
+pause
+////////////////////
+////////////////////
+OLD_ENIGMA_APPS:
+mov VERSION_TYPE, "MID-OLD"
+mov TEST_R32,  $RESULT
+find TEST_R32, #83??04#
+cmp $RESULT, 00
+je REDIRECT_NOT_FOUND
+mov RD, $RESULT
+findop RD, #C3#
+cmp $RESULT, 00
+je REDIRECT_NOT_FOUND
+mov RET, $RESULT
+inc RET
+cmp [RET], E9, 01
+jne DIRECT_RETURN
+findop RET, #C3#
+cmp $RESULT, 00
+je REDIRECT_NOT_FOUND
+mov RET, $RESULT
+bphws RET, "x"
+bpgoto RET, RET_STOP
+jmp READ_RD
+////////////////////
+DIRECT_RETURN:
+dec RET
+bphws RET, "x"
+bpgoto RET, RET_STOP
+////////////////////
+READ_RD:
+preop RD
+mov RD, $RESULT
+cmp [RD], 0B8B, 02
+jne READ_RD
+readstr [RD], 0A
+mov RD_R, $RESULT
+buf RD_R
+bpgoto RD, RD_STOP
+bphws RD, "x"
+find ENIGMASEC, #C6431E01#
+cmp $RESULT, 00
+je OLD_REG_SHEME_SIGN
+mov EN_EMU, $RESULT
+sub EN_EMU, 20
+find EN_EMU, #80B8????????0074??#
+cmp $RESULT, 00
+je OLD_REG_SHEME_SIGN
+mov EN_EMU, $RESULT+07
+bphws EN_EMU, "x"
+bpgoto EN_EMU, EN_EMU_STOP
+////////////////////
+OLD_REG_SHEME_SIGN:
+find ENIGMASEC, #0F9500A1#
+cmp $RESULT, 00
+je HWID_CHECK
+mov SETNE_IN, $RESULT
+mov REGSHEME_SCAN, 00
+mov REGSHEME_SCAN, "Yes"
+cmp BYPASS_REGSHEME, 01
+jne HWID_CHECK
+bphws SETNE_IN, "x"
+bpgoto SETNE_IN, SETNE_IN_STOP
+////////////////////
+HWID_CHECK:
+cmp CHANGE_HWID, 01
+jne HWID_CHECK_2
+find ENIGMASEC, #8B95E4??FFFF??????FF000000E8??????????????????????????????????E8#
+cmp $RESULT, 00
+je NO_HWID_SIGN_STOP_FOUND
+mov HWID_A, $RESULT+1F
+gci HWID_A, DESTINATION
+mov HWID_A, $RESULT
+bphws HWID_A
+bpgoto HWID_A, HWID_CHANGE_OLD_VERSION
+mov E_HWID_SCAN, 00
+mov E_HWID_SCAN, "Yes"
+jmp HWID_OLD_NOT_FOUND
+////////////////////
+NO_HWID_SIGN_STOP_FOUND:
+log "Found no HWID sign stop to change HWID!"
+////////////////////
+HWID_CHECK_2:
+find ENIGMASEC, #A1????????80B8??????????74??A1??????????????75??E8????????
+A1??????????????75??A1??????????????????????74#
+cmp $RESULT, 00
+je HWID_OLD_NOT_FOUND
+mov HWID_CHECK, $RESULT
+mov HWID_DIRECT_FOUND, 01
+add HWID_CHECK, 0E
+mov HWID_CHECK_IN, [HWID_CHECK+01]
+mov HWID_CHECK_IN, [HWID_CHECK_IN]
+mov REGSHEME_SCAN, 00
+mov REGSHEME_SCAN, "Yes"
+cmp PATCH_HWID_SILENCE, 01
+jne HWID_OLD_NOT_FOUND
+bphwc SETNE_IN
+call PATCH_HWID_SILENCE
+////////////////////
+HWID_OLD_NOT_FOUND:
+esto
+cmp PATCH_HWID_SILENCE, 01
+jne HWID_OLD_NOT_FOUND
+mov [HWID_CHECK_IN], 01
+mov E_REGSHEME_PATCH, 00
+mov E_REGSHEME_PATCH, "Yes"
+bphws HWID_CHECK_IN, "w"
+jmp HWID_OLD_NOT_FOUND
+////////////////////
+HWID_CHANGE_OLD_VERSION:
+mov OLD_HWID_COUNT, 00
+cmp USER_HWID, 00
+jne ALREADY_ENTERED
+ask "Enter full HWID as string with quotes!"
+cmp $RESULT, -1
+je HWID_CHANGE_OLD_VERSION
+cmp $RESULT, 00
+je HWID_CHANGE_OLD_VERSION
+mov USER_HWID, $RESULT
+alloc 1000
+mov HWID_SEC_A, $RESULT
+mov [HWID_SEC_A], USER_HWID
+len USER_HWID
+mov USER_HWID_COUNT, $RESULT
+rtr
+rtr
+bphwc HWID_A
+mov HWID_A, eip
+bphws HWID_A
+bpgoto HWID_A, HWID_CHANGE_OLD_VERSION
+////////////////////
+ALREADY_ENTERED:
+mov eax, HWID_SEC_A
+mov E_HWID_PATCHED, 00
+mov E_HWID_PATCHED, "Yes"
+jmp HWID_OLD_NOT_FOUND
+////////////////////
+AFTER_IAT_PATCH:
+find ENIGMASEC, #F7E289D05BC3#
+cmp $RESULT, 00
+je REDIRECT_NOT_FOUND
+add $RESULT, 05
+bphws $RESULT, "x"
+esto
+bphwc
+call STI
+call RTR
+call STI
+////////////////////
+CHECK_LOOPING:
+mov CHECK_LOOPING, 01
+find eip, #740C#, 80
+cmp $RESULT, 00
+je REDIRECT_NOT_FOUND_TT
+bphws $RESULT, "x"
+call EXIT_PATCH
+esto
+inc TT
+bphwc eip
+cmp !ZF, 01
+sti
+je CHECK_LOOPING
+cmp TT, 03
+jne CHECK_LOOPING
+////////////////////
+PREOP_74:
+preop eip
+mov eip, $RESULT
+mov !ZF, 01
+sti
+////////////////////
+AFTER_PREOP:
+find eip, #740?#
+cmp $RESULT, 0
+je REDIRECT_NOT_FOUND
+bphws $RESULT, "x"
+esto
+bphwc eip
+cmp !ZF, 01
+je NEXT_2
+////////////////////
+WRITE_IAT_RD:
+find ENIGMASEC, #03118902464F75#
+cmp $RESULT, 00
+je REDIRECT_NOT_FOUND
+preop $RESULT
+mov JMP, $RESULT
+readstr [JMP], 08
+mov ORG, $RESULT
+buf ORG
+alloc 1000
+mov NEWSEC, $RESULT
+alloc 5000
+mov APISEC, $RESULT
+mov [NEWSEC], ORG
+mov [NEWSEC+08], 128B008B
+eval "JMP {NEWSEC}"
+asm JMP, $RESULT
+mov [NEWSEC+0C], 0289, 02
+add JMP, 0A
+mov [NEWSEC+0E],
+#60BFAAAAAAAA8B378916894604837F0400750689570889570C83F800741FFF47049083C60889373957
+08770739570C7207EB0A895708EB0589570CEB0061E959AA0BAA90#
+mov [NEWSEC+10], APISEC
+mov [APISEC], APISEC
+add [APISEC], 10
+eval "JMP {JMP}"
+asm NEWSEC+4C, $RESULT
+sub JMP, 0A
+findop JMP, #C3#
+cmp $RESULT, 00
+je REDIRECT_NOT_FOUND
+bphwc
+mov E_STAMP, $RESULT
+bphws E_STAMP, "x"
+call FIND_IMULER
+////////////////////
+E_STAMP_LABEL:
+esto
+bphwc
+cmp E_VM1, 00
+je NO_RD_PATCHED_2
+mov [E_VM1], E_VM1_BAK
+cmp E_VM2, 00
+je NO_RD_PATCHED_2
+mov [E_VM2], E_VM2_BAK
+free E_VM1_SEC
+////////////////////
+NO_RD_PATCHED_2:
+mov IATSTART, [APISEC+08]
+mov IATEND,   [APISEC+0C]
+mov API_IN,   [APISEC+04]
+free APISEC
+cmp [eip], C3, 1
+jne NEXT_2
+free NEWSEC
+mov [JMP], ORG
+call STI
+////////////////////
+NEXT_2:
+bphwc
+find ENIGMASEC, #E8????????8B45FCFFE05F5E5B8BE55D#
+cmp $RESULT, 00
+jne FOUND_ALPHA
+find ENIGMASEC, #E8????????8??5F???????FFE05E5B8BE55D#
+cmp $RESULT, 00
+je REDIRECT_NOT_FOUND
+add $RESULT, 0B
+bphwc
+bphws $RESULT, "x"
+jmp RUN_ALPHA
+////////////////////
+FOUND_ALPHA:
+add $RESULT, 08
+bphwc
+bphws $RESULT, "x"
+////////////////////
+RUN_ALPHA:
+esto
+bc
+bphwc
+call STI
+gmemi eip, MEMORYBASE
+find $RESULT, #FFE0E904000000????????E904000000#
+cmp $RESULT, 00
+jne FOUND_OEP_ALPHA
+gmemi eip, MEMORYBASE
+findop $RESULT, #FFE0#
+cmp $RESULT, 00
+je REDIRECT_NOT_FOUND
+////////////////////
+FOUND_OEP_ALPHA:
+bphws $RESULT, "x"
+call EXIT_PATCH
+esto
+bphwc
+call STI
+gmemi eip, MEMORYBASE
+mov TESTOEP, $RESULT
+cmp TESTOEP, IMAGESIZE
+ja MEMORY_OEP
+cmp TESTOEP, IMAGEBASE
+jb MEMORY_OEP
+cmt eip, "<<<------ OEP"
+bphwc
+bc
+call VM
+jmp OLD_END
+////////////////////
+MEMORY_OEP:
+mov TESTOEP, eip
+findop eip, #E9#
+cmp $RESULT, 00
+jne MEMORY_OEP_2
+call VM
+jmp OLD_END
+////////////////////
+MEMORY_OEP_2:
+alloc 1000
+mov JMPSECS, $RESULT
+mov JMPSECS_2, $RESULT
+bphwc
+bc
+pusha
+mov edx, JMPSECS
+mov ecx, TESTOEP
+////////////////////
+JUMP_FINDER:
+findop ecx, #E9#
+cmp $RESULT, 00
+je ALL_END_OF_JMPS
+mov ecx, $RESULT
+gci ecx, SIZE
+mov JMPSIZE, $RESULT
+cmp JMPSIZE, 05
+je RIGHT_JUMP_VALUE
+ja RIGHT_JUMP_VALUE
+add ecx, JMPSIZE
+jmp JUMP_FINDER
+////////////////////
+RIGHT_JUMP_VALUE:
+gci ecx, DESTINATION
+mov DEST_CHECK, $RESULT
+cmp DEST_CHECK, CODESECTION
+jb NOT_RIGHT_B
+cmp DEST_CHECK, IMAGESIZE
+ja NOT_RIGHT_B
+mov [edx], ecx
+add ecx, JMPSIZE
+add edx, 04
+jmp JUMP_FINDER
+////////////////////
+NOT_RIGHT_B:
+add ecx, JMPSIZE
+jmp JUMP_FINDER
+////////////////////
+ALL_END_OF_JMPS:
+mov esi, [edx-04]
+mov tmp, esi
+mov $RESULT, tmp
+free JMPSECS_2
+jmp ITS_RIGHT_OEP
+////////////////////
+ITS_RIGHT_OEP:
+popa
+cmt eip, "<<<------ OEP IN VM"
+mov OEPEND, $RESULT
+gci OEPEND, DESTINATION
+mov OEPJMP, $RESULT
+mov OEPJMP_2, $RESULT
+sub OEPEND, TESTOEP
+sub OEPJMP, OEPEND
+call READ_NEW_OEP_FREE_LOCATION
+call FIX
+cmt eip, "<<<------ OEP VM MOVE"
+bphwc
+bc
+call VM
+////////////////////
+OLD_END:
+jmp ENDE
+////////////////////
+VM:
+ret
+////////////////////
+VM_2:
+pause
+pause
+////////////////////
+FIX:
+alloc 1000
+mov SRTSEC, $RESULT
+pusha
+mov eax, SRTSEC
+mov ecx, CODESECTION
+mov edx, CODESECTION_SIZE
+exec
+pushad
+push eax
+push 40
+push edx
+push ecx
+call {VirtualProtect}
+popad
+ende
+popa
+free SRTSEC
+mov EIP_IN, eip
+alloc 1000
+mov MAIN_DATA_SEC,      $RESULT
+mov [MAIN_DATA_SEC],    EIP_IN
+alloc 1000
+mov MEMBLOCK,           $RESULT
+mov [MAIN_DATA_SEC+04], OEPJMP
+mov [MAIN_DATA_SEC+08], OEPEND+05
+alloc 2000
+mov OPCODE_SEC,         $RESULT
+mov [MAIN_DATA_SEC+0C], $RESULT
+alloc 3000
+mov PATCHING_SEC,       $RESULT
+alloc 4000
+mov STACK_SECTION,      $RESULT
+/////////////////////////
+mov [OPCODE_SEC],
+#606A0F596A085AE88D0000005411A1025411A101415411A1025411A1025411A141015411A141015411
+A141015411A1410F0F055244A1F11161041F1161F1625C0AC105240411A10618A86221015261F131012
+10211025412025818A2C1110441014202819106525472017102765977547458067A5F5F5F5364530176
+52AFA15F5103516151720351615B7261576151635108715F5F51715E715F578A1E8A0747D4102AD873F
+75FAC86E03C0774183C04755180FC0F750383C75B80EC6580FC0277020AF4E2D4EB2D80FB40730780FC
+067502B380C0EB067A1102C380ECA080FC03770780F208740BD0EE66F7C20801750240402AC104103C1
+0F50FB6C08944241C61C332D03C09760224073C0572CC8B1E493C081C04A804740F2C03F6C330740232
+C03C027402B208B40722E3F6C602759680E3C079047AB1404080FC04750540B40722E784DB758B80FC0
+575860404EB82#
+/////////////////////////
+mov [PATCHING_SEC],
+#64697361736D2E646C6C007464697361736D2E646C6C006B65726E656C33322E646C6C004C6F61644C
+696272617279410047657450726F6341646472657373005669727475616C416C6C6F63005F417373656
+D626C65403234005F44495341534D5F476574496E737472756374696F6E403800909090909090#
+mov [PATCHING_SEC+79],
+#60B80000000068AAAAAAAAE821AA1AAA09C0750290908BF868AAAAAAAA57E80EAA1AAA09C075029090
+8BF06A40680030000068005000006A00FFD009C0750290908BE889288970048978088BF86A406800300
+00068005000006A00FFD609C0750290908BF089770C68AAAAAAAAE8BFA91AAA09C075029090#
+mov [PATCHING_SEC+0F1],
+#68AAAAAAAA50E8AEA91AAA09C07502909089471068AAAAAAAAE89BA91AAA09C07502909068AAAAAAAA
+50E88AA91AAA09C07502909089471490908967408B670C81C400300000B8AAAAAAAA8B08894F188B480
+4894F1C8B4808894F208B480C894F248BF78B46188B7E1C8BEE8BF0FF55248945288BC65050FF551490
+90#
+mov [PATCHING_SEC+16E],
+#89BC24000100008BFDBDAAAAAAAA81C5002000008DB5A0FEFFFF8D8DA0FDFFFF516A006A0056FFB424
+1001000050FF57108B4F283BC10F84A50200008B4424E88DB5A0FEFFFF8D8DA0FDFFFF516A006A0156F
+FB4241001000050FF57108B4F283BC10F84790200008B4424E88DB5A0FEFFFF8D8DA0FDFFFF516A006A
+0256FFB4241001000050#
+mov [PATCHING_SEC+1F4],
+#FF57108B4F283BC10F844D0200008B4424E88DB5A0FEFFFF8D8DA0FDFFFF516A006A0356FFB4241001
+000050FF57108B4F283BC10F84210200008B4424E88DB5A0FEFFFF8D8DA0FDFFFF516A016A0056FFB42
+41001000050FF57108B4F283BC10F84F50100008B4424E88DB5A0FEFFFF8D8DA0FDFFFF516A026A0056
+FFB4241001000050FF57108B4F283BC10F84C9010000#
+mov [PATCHING_SEC+286],
+#8B4424E88DB5A0FEFFFF8D8DA0FDFFFF516A036A0056FFB4241001000050FF57108B4F283BC10F849D
+0100008B4424E88DB5A0FEFFFF8D8DA0FDFFFF516A016A0156FFB4241001000050FF57108B4F283BC10
+F84710100008B4424E88DB5A0FEFFFF8D8DA0FDFFFF516A026A0156FFB4241001000050FF57108B4F28
+3BC10F84450100008B4424E8#
+mov [PATCHING_SEC+30E],
+#8DB5A0FEFFFF8D8DA0FDFFFF516A036A0156FFB4241001000050FF57108B4F283BC10F84190100008B
+4424E88DB5A0FEFFFF8D8DA0FDFFFF516A016A0256FFB4241001000050FF57108B4F283BC10F84ED000
+0008B4424E88DB5A0FEFFFF8D8DA0FDFFFF516A026A0256FFB4241001000050FF57108B4F283BC10F84
+C10000008B4424E88DB5A0FEFFFF8D8DA0FDFFFF516A036A0256FFB4241001000050FF5710#
+mov [PATCHING_SEC+3AF],
+#8B4F283BC10F84950000008B4424E88DB5A0FEFFFF8D8DA0FDFFFF516A016A0356FFB4241001000050
+FF57108B4F283BC10F84690000008B4424E88DB5A0FEFFFF8D8DA0FDFFFF516A026A0356FFB42410010
+00050FF57108B4F283BC10F843D0000008B4424E88DB5A0FEFFFF8D8DA0FDFFFF516A036A0356FFB424
+1001000050FF57108B4F283BC174158BD7#
+mov [PATCHING_SEC+43C],
+#8B77188B7A1C014A30F3A4897218897A1CEB128BD78B7A1C8BC8F3A4897A1C0142180142308B42308B
+4A203BC1740C770A8BEA8B7218E9E8FCFFFF8B62406190909090909090909090#
+/////////////////////////
+mov [PATCHING_SEC+178], STACK_SECTION
+mov [PATCHING_SEC+138], MAIN_DATA_SEC
+mov eip, PATCHING_SEC+79
+mov PATCHING_SEC_2,    PATCHING_SEC+79
+mov [PATCHING_SEC_2+07], PATCHING_SEC+17
+call LOADLIB_VAL
+asm PATCHING_SEC_2+0B,   $RESULT
+call LOADLIB_VAL
+asm PATCHING_SEC_2+6D,   $RESULT
+call LOADLIB_VAL
+asm PATCHING_SEC_2+91,   $RESULT
+mov [PATCHING_SEC_2+19], PATCHING_SEC+40
+call GETPROC_VAL
+asm PATCHING_SEC_2+1E,   $RESULT
+call GETPROC_VAL
+asm PATCHING_SEC_2+7E,   $RESULT
+call GETPROC_VAL
+asm PATCHING_SEC_2+0A2,  $RESULT
+mov [PATCHING_SEC_2+69], PATCHING_SEC
+mov [PATCHING_SEC_2+79], PATCHING_SEC+4D
+mov [PATCHING_SEC_2+8D], PATCHING_SEC+0B
+mov [PATCHING_SEC_2+9D], PATCHING_SEC+5A
+alloc 2000
+mov PATH_DLL_SEC, $RESULT
+mov [PATH_DLL_SEC], DISASM
+mov [PATH_DLL_SEC+1000], TDISASM
+mov [PATCHING_SEC_2+69], PATH_DLL_SEC
+mov [PATCHING_SEC_2+8D], PATH_DLL_SEC+1000
+bp PATCHING_SEC_2+14
+bp PATCHING_SEC_2+27
+bp PATCHING_SEC_2+3F
+bp PATCHING_SEC_2+61
+bp PATCHING_SEC_2+76
+bp PATCHING_SEC_2+87
+bp PATCHING_SEC_2+9A
+bp PATCHING_SEC_2+0AB
+bp PATCHING_SEC_2+402
+run
+bc
+call BP_CHECK_STOPS
+mov eip, EIP_IN
+free MAIN_DATA_SEC
+free OPCODE_SEC
+free PATCHING_SEC
+free STACK_SECTION
+free MEMBLOCK
+free PATH_DLL_SEC
+mov eip, OEPJMP
+gmemi EIP_IN, MEMORYBASE
+mov OEP_MEM, $RESULT
+pusha
+mov eax, eip
+mov esi, TESTOEP
+mov ecx, eip+OEPEND
+mov edx, 00
+mov ebx, 00
+mov edi, PE_HEADER
+/////////////////////////
+READ_COMMAND_VALUE:
+cmp eax, ecx
+je END_CHECKING
+ja END_CHECKING
+gci eax, SIZE
+mov ebx, $RESULT
+add JMPCOUNTER, $RESULT
+gci eax, TYPE
+cmp $RESULT, 50
+je FIX_JMP_VALUE_5
+cmp $RESULT, 60
+je FIX_JMP_VALUE_6
+add eax, ebx
+mov ebx, 00
+jmp READ_COMMAND_VALUE
+/////////////////////////
+FIX_JMP_VALUE_6:
+mov ebp, 00
+cmp ebx, 06
+jne ADD_VALUES_1
+gci eax, DESTINATION
+mov ebp, $RESULT
+gmemi ebp, MEMORYBASE
+cmp $RESULT, OEP_MEM
+jne ADD_VALUES_1
+mov ebp, [eax+02]
+add ebp, eax+06
+sub ebp, EIP_IN
+sub ebp, JMPCOUNTER
+mov [eax+02], ebp
+/////////////////////////
+ADD_VALUES_1:
+add eax, ebx
+jmp READ_COMMAND_VALUE
+/////////////////////////
+FIX_JMP_VALUE_5:
+mov ebp, 00
+cmp ebx, 05
+jne ADD_VALUES_2
+gci eax, DESTINATION
+mov ebp, $RESULT
+gmemi ebp, MEMORYBASE
+cmp $RESULT, OEP_MEM
+jne ADD_VALUES_2
+mov ebp, [eax+01]
+add ebp, eax+05
+sub ebp, EIP_IN
+sub ebp, JMPCOUNTER
+mov [eax+01], ebp
+/////////////////////////
+ADD_VALUES_2:
+add eax, ebx
+jmp READ_COMMAND_VALUE
+/////////////////////////
+END_CHECKING:
+popa
+log ""
+log "OEP was moved and adjusted from memory to main target!"
+log ""
+mov E_OEP_MOVE, 00
+mov E_OEP_MOVE, "Yes"
+ret
+/////////////////////////
+LOADLIB_VAL:
+eval "call {LoadLibraryA}"
+ret
+/////////////////////////
+GETPROC_VAL:
+eval "call {GetProcAddress}"
+ret
+/////////////////////////
+BP_CHECK_STOPS:
+cmp eip, PATCHING_SEC_2+402
+je ALL_DONE_RIGHT
+pusha
+mov eax, eip
+mov AL_REG, al
+eval "PROB_0{AL_REG}"
+jmp $RESULT
+pause
+pause
+/////////////////////////
+PROB_08D:
+popa
+eval "PROBLEM: Kernel32.dll could not be loaded!"
+log $RESULT, ""
+msg $RESULT
+pause
+/////////////////////////
+PROB_0A0:
+popa
+eval "PROBLEM: VirtualAlloc API could not be loaded!"
+log $RESULT, ""
+msg $RESULT
+pause
+/////////////////////////
+PROB_0B8:
+popa
+eval "PROBLEM: New Free Section 1 could not be created!"
+log $RESULT, ""
+msg $RESULT
+pause
+/////////////////////////
+PROB_0DA:
+popa
+eval "PROBLEM: New Free Section 2 could not be created!"
+log $RESULT, ""
+msg $RESULT
+pause
+/////////////////////////
+PROB_0EF:
+popa
+eval "PROBLEM: disasm.dll could not be loaded!"
+log $RESULT, ""
+msg $RESULT
+pause
+/////////////////////////
+PROB_00:
+popa
+eval "PROBLEM: _Assemble@24 API could not be loaded!"
+log $RESULT, ""
+msg $RESULT
+pause
+/////////////////////////
+PROB_013:
+popa
+eval "PROBLEM: tdisasm.dll could not be loaded!"
+log $RESULT, ""
+msg $RESULT
+pause
+/////////////////////////
+PROB_024:
+popa
+eval "PROBLEM: _DISASM_GetInstruction@8 API could not be loaded!"
+log $RESULT, ""
+msg $RESULT
+pause
+/////////////////////////
+ALL_DONE_RIGHT:
+ret
+////////////////////
+SET_HWBP:
+bphws HWID_CHECK_IN, "w"
+ret
+////////////////////
+RET_IT:
+pause
+pause
+ret
+////////////////////
+RET_STOP:
+bphwc RET
+jmp AFTER_IAT_PATCH
+////////////////////
+EN_EMU_API:
+EN_EMU_STOP:
+bphwc EN_EMU
+mov !zf, 1
+call STO_LOOP
+cmp CHECK_LOOPING, 01
+jne HWID_STOP_DOER
+inc TT
+bphwc eip
+jmp CHECK_LOOPING
+////////////////////
+HWID_STOP_DOER:
+jmp HWID_OLD_NOT_FOUND
+////////////////////
+IAT_PATCH:
+RD_STOP:
+bphwc
+mov [RD], #8B4C24C49090909090#
+find RD, #0F85????????33C0#
+cmp $RESULT, 00
+je REDIRECT_NOT_FOUND
+add $RESULT, 06
+bphws $RESULT, "x"
+call FIND_EXTRA_FILES
+esto
+cmp eip, EN_FILES
+jne NO_EXTRA_STOP
+call LOG_EXTRA_DATA
+////////////////////
+NO_EXTRA_STOP:
+bphwc
+mov [RD], RD_R
+jmp AFTER_IAT_PATCH
+////////////////////
+SETNE_MANUALLY:
+SETNE_IN_STOP:
+bphwc SETNE_IN
+mov tmp, eip
+mov [tmp], #0F9400#
+sti
+cmp eip, tmp
+je SETNE_MANUALLY
+mov [tmp], #0F9500#
+mov tmp, 00
+mov E_REGSHEME_PATCH, 00
+mov E_REGSHEME_PATCH, "Yes"
+jmp HWID_OLD_NOT_FOUND
+////////////////////
+REDIRECT_NOT_FOUND_TT:
+cmp TT, 03
+jne REDIRECT_NOT_FOUND
+cmp [eip],#74#, 01
+je PREOP_74
+jmp AFTER_PREOP
+////////////////////
+REDIRECT_NOT_FOUND:
+pause
+pause
+ret
+////////////////////
+RETURN:
+ret
+////////////////////
+STI:
+mov tmp, eip
+////////////////////
+STI_A:
+sti
+cmp eip, tmp
+je STI_A
+mov tmp, 00
+ret
+////////////////////
+RTR:
+mov tmp, eip
+////////////////////
+RTR_A:
+rtr
+cmp eip, tmp
+je RTR_A
+mov tmp, 00
+ret
+pause
+pause
+////////////////////
+STO_LOOP:
+mov bak ,eip
+////////////////////
+STO_LOOP_DO:
+sto
+cmp eip, bak
+je STO_LOOP_DO
+mov bak, 00
+ret
+////////////////////
+STI_LOOP:
+mov bak ,eip
+////////////////////
+STI_LOOP_DO:
+sti
+cmp eip, bak
+je STI_LOOP_DO
+mov bak, 00
+ret
+////////////////////
+FIX_INTERN_VM_2:
+mov [PATCHSEC+45], pointerin
+add [PATCHSEC+24], 60
+sub [PATCHSEC+37], 60
+mov bak, eip
+bp PATCHSEC+50
+bp PATCHSEC+53
+bp PATCHSEC+55
+bp PATCHSEC+57
+bp PATCHSEC+59
+mov eip, PATCHSEC
+call GET_EXTENSION
+scmpi EXTENSION, "exe"
+je NORMAL_RUN_NO_MOD
+mov EN_DLL_BAK, 01
+mov [PATCHSEC+45], ENIGMASEC
+gmemi ENIGMASEC, MEMORYSIZE
+mov ENIGMASEC_SIZE, $RESULT
+alloc ENIGMASEC_SIZE
+mov ENIGMASEC_SIZE_BAK, $RESULT
+pusha
+mov esi, ENIGMASEC
+mov edi, ENIGMASEC_SIZE_BAK
+mov ecx, ENIGMASEC_SIZE-10
+exec
+pushad
+REP MOVS BYTE PTR ES:[EDI],BYTE PTR DS:[ESI]
+popad
+ende
+popa
+bp PATCHSEC+1C
+run
+cmp eip, PATCHSEC+1C
+jne NORMAL_AGAIN
+mov ENIGMA_BASE, eax
+mov ENIGMA_BASE_2, eax
+add ENIGMA_BASE_2, 91DE+14A7A
+add eax, 14A7A
+eval "jmp {ENIGMA_BASE_2}"
+asm eax, $RESULT
+mov eax, ENIGMA_BASE+1DCC9
+eval "{PROCESSNAME_2}.{EXTENSION}"
+mov [eax], $RESULT
+mov [ENIGMA_BASE_2],
+#6081C7C9DC0100897C242061FF970CE001006081C7804A0100897C24C061FF6424A090#
+bc PATCHSEC+1C
+mov eax, ENIGMA_BASE
+mov ENIGMA_BASE, eax
+mov ENIGMA_BASE_2, eax
+add ENIGMA_BASE_2, 91DE+14A7A+22
+add eax, 144F4
+eval "jmp {ENIGMA_BASE_2}"
+asm eax, $RESULT
+mov [ENIGMA_BASE_2],
+#608B7C242881C7C9DC0100897C24208B7C242881C70CE001008B3F897C24C0613EFF5424A0608B7C24
+2481C7FA440100EBC5#
+mov eax, ENIGMA_BASE
+mov ENIGMA_BASE, eax
+mov ENIGMA_BASE_2, eax
+add ENIGMA_BASE_2, 91DE+14A7A+54
+add eax, 1449E
+eval "jmp {ENIGMA_BASE_2}"
+asm eax, $RESULT
+mov [ENIGMA_BASE_2], #8B7C240481C7C9DC01008B7424048BB60CE00100E9DF67FFFF90909090#
+mov eax, ENIGMA_BASE
+jmp RUN_VM_OUT
+////////////////////
+NORMAL_RUN_NO_MOD:
+cmp FIX_OUTER_VM_INSIDE, 01
+jne NOT_INSIDE
+mov [PATCHSEC+45], ENIGMASEC
+////////////////////
+NOT_INSIDE:
+mov [PATCHSEC+45], 01
+////////////////////
+RUN_VM_OUT:
+run
+////////////////////
+NORMAL_AGAIN:
+bc
+cmp eip, PATCHSEC+50
+jne PROBLEM
+mov E_OUTER_VM_FIXED, "Yes"
+add esp, 04
+mov VM_2, 01
+call STO_DO_IT
+mov tmp, JTABLE
+mov eip, bak
+////////////////////
+GET_JUMP:
+cmp [tmp], E9, 01
+jne INCER
+gci tmp, DESTINATION
+mov SEC_VM, $RESULT
+gmemi SEC_VM, MEMORYBASE
+mov SEC_VM, $RESULT
+gmemi SEC_VM, MEMORYSIZE
+mov SEC_VM_SIZE, $RESULT
+pusha
+mov eax, SEC_VM
+mov ecx, MODULEBASE
+mov edx, IMAGESIZE
+cmp eax, ecx
+jb SECTION_OVER_TARGET
+cmp eax, edx
+ja SECOND_VM_OUTSIDE_SECTION
+jmp SECOND_VM_INSIDE_SECTION
+////////////////////
+INCER:
+inc tmp
+jmp GET_JUMP
+pause
+pause
+pause
+////////////////////
+SECTION_OVER_TARGET:
+popa
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}The second VM was fixed in a section over
+you target! {L1}Problem! \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+log ""
+log "The second VM was fixed in a section over you target!Problem!"
+log "In this case you can not add this section on your dump!"
+log ""
+pause
+pause
+ret
+////////////////////
+SECOND_VM_INSIDE_SECTION:
+popa
+log ""
+log "The second VM was fixed into main target itself!No section dumping needed!"
+log ""
+jmp ENDE
+////////////////////
+SECOND_VM_OUTSIDE_SECTION:
+popa
+pusha
+mov eax, SEC_VM
+mov edx, SEC_VM
+sub edx, MODULEBASE
+mov ecx, SEC_VM_SIZE
+////////////////////
+FIND_POSSIBLE_WRONG_TLS_POINTER:
+find SEC_VM, #648B15000000008B0482#
+cmp $RESULT, 00
+je NO_WRONG_TLS_FOUND
+mov TLS_WRONG_POINTER, $RESULT
+log ""
+log "Found WRONG TLS pointer!"
+log ""
+log TLS_WRONG_POINTER, "TLS_WRONG_POINTER VA: "
+log ""
+mov [TLS_WRONG_POINTER+03], 2C, 01
+log "Fixed WRONG pointer by script!"
+log ""
+log "Borland Delphi fix problem of DV plugin!"
+log ""
+jmp DUMP_THE_EXTRA
+////////////////////
+NO_WRONG_TLS_FOUND:
+log ""
+log "Found no wrong TLS pointer!"
+log ""
+////////////////////
+DUMP_THE_EXTRA:
+eval "VM_2_Sec_VA {eax} - RVA {edx}"
+dm eax, ecx, $RESULT
+log ""
+log "The second VM was fixed into a new section!"
+log ""
+eval "VM_2_Sec_VA {eax} - RVA {edx}"
+log $RESULT, ""
+log ""
+popa
+jmp ENDE
+////////////////////
+FIX_INTERN_VM:
+call READ_REGISTER
+call ESP_READ
+mov bak, eip
+alloc 2000
+mov PATCHSEC,   $RESULT
+mov PATCHSEC_2, $RESULT
+mov [PATCHSEC],     TITAN
+mov [PATCHSEC+100], DV_DLL
+mov [PATCHSEC+200], VM_IN
+mov [PATCHSEC+260], VM_OUT
+add PATCHSEC, 1000
+mov [PATCHSEC],
+#60BEAAAAAAAA56E89E9A8AA909C0744281C60001000056E88E9A8AA909C074348BF881C60001000056
+57E87B9A8AA909C074238BE883C6605657E86B9A8AA909C074159068AAAAAAAA68BBBBBBBBFFE561906
+190619061906190#
+mov [PATCHSEC+02], PATCHSEC_2
+eval "call {LoadLibraryA}"
+asm PATCHSEC+07, $RESULT
+eval "call {LoadLibraryA}"
+asm PATCHSEC+17, $RESULT
+eval "call {GetProcAddress}"
+asm PATCHSEC+2A, $RESULT
+eval "call {GetProcAddress}"
+asm PATCHSEC+3A, $RESULT
+mov [PATCHSEC+45], pointerin
+mov [PATCHSEC+4A], PATCHSEC+50
+bp PATCHSEC+50
+bp PATCHSEC+53
+bp PATCHSEC+55
+bp PATCHSEC+57
+bp PATCHSEC+59
+mov eip, PATCHSEC
+call GET_EXTENSION
+bp PATCHSEC+1C
+run
+cmp eip, PATCHSEC+1C
+jne SOME_WRONG
+mov ENIGMA_BASE, eax
+mov ENIGMA_BASE_2, eax
+add ENIGMA_BASE_2, 91DE+14A7A
+add eax, 14A7A
+eval "jmp {ENIGMA_BASE_2}"
+asm eax, $RESULT
+mov eax, ENIGMA_BASE+1DCC9
+eval "{PROCESSNAME_2}.{EXTENSION}"
+mov [eax], $RESULT
+mov [ENIGMA_BASE_2],
+#6081C7C9DC0100897C242061FF970CE001006081C7804A0100897C24C061FF6424A090#
+bc PATCHSEC+1C
+mov eax, ENIGMA_BASE
+run
+bc
+////////////////////
+SOME_WRONG:
+cmp eip, PATCHSEC+50
+jne PROBLEM
+mov VM_1, 01
+add esp, 04
+mov bak2, eip
+////////////////////
+STO_DO_IT:
+sto
+cmp eip, bak2
+je STO_DO_IT
+log ""
+cmp [JTABLE], JTABLE_IN
+jne TABLE_FIXED_01
+log ""
+log "Jump Table was not changed after using Enigma DeVirtualizer!"
+log ""
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Jump Table was not changed after using
+Enigma DeVirtualizer! \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+pause
+pause
+ret
+////////////////////
+TABLE_FIXED_01:
+mov E_INTERN_VM_FIXED, 00
+mov E_INTERN_VM_FIXED, "Yes"
+log ""
+log "Jump Table was changed after using Enigma DeVirtualizer!"
+log ""
+ret
+////////////////////
+PROBLEM:
+pusha
+mov eax, eip
+mov CHECK, al
+eval "1_{CHECK}"
+jmp $RESULT
+////////////////////
+1_55:
+log ""
+log DV_DLL, "Loading Problem of - "
+jmp LOADING_PROBLEM_MESSAGE
+////////////////////
+1_53:
+log ""
+log TITAN, "Loading Problem of - "
+jmp LOADING_PROBLEM_MESSAGE
+////////////////////
+1_57:
+log ""
+log VM_IN, "API Problem of - "
+jmp LOADING_PROBLEM_MESSAGE
+////////////////////
+1_59:
+log ""
+log VM_OUT, "API Problem of - "
+popa
+add esp, 04
+jmp LOADING_PROBLEM_MESSAGE
+////////////////////
+LOADING_PROBLEM_MESSAGE:
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}PROBLEM of loading DLL or API! {L1}Open Olly
+LOG window to see the reason! \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+pause
+pause
+ret
+////////////////////
+VP_CODESEC:
+alloc 1000
+mov VP_SEC, $RESULT
+mov VP_SEC_2, $RESULT
+pusha
+gmemi NEW_OEP, MEMORYBASE
+mov eax, $RESULT
+gmemi NEW_OEP, MEMORYSIZE
+mov ecx, $RESULT
+mov edx, VP_SEC
+add edx, 10
+mov [VP_SEC+10], #60526A405150E8AB466AAA61909090#
+eval "call VirtualProtect"
+asm VP_SEC+16, $RESULT
+mov bak, eip
+mov eip, VP_SEC+10
+bp VP_SEC+1B
+run
+bc
+cmp eax, 01
+je PROTECT_SUCCESS
+pause
+pause
+pause
+////////////////////
+PROTECT_SUCCESS:
+mov tamp, eip
+////////////////////
+STO_2:
+sto
+cmp eip, tamp
+je STO_2
+popa
+ret
+////////////////////
+EXIT_PATCH:
+mov [ExitProcess], #EBFE#
+ret
+////////////////////
+RESTORE_EXIT:
+// readstr [ExitProcess], 05
+mov [ExitProcess], EXIT_BAK
+ret
+////////////////////
+ENDE:
+call EXIT_PATCH
+call ESP_READ
+call READ_REGISTER
+call OLDER_VM_CHECKING
+call MEMORY_OEP_CHECK
+cmp VM_1, 01
+je VM_1_ALREADY_FIXED
+////////////////////
+VM_1_ALREADY_FIXED:
+cmp VM_2, 01
+je VM_2_ALREADY_FIXED
+call FIND_VM_ROUTINES
+cmp VM_OUT_FOUND, 00
+je NO_VM_TO_FIX
+msg "Found VM in your target!If VM fixing fail crash then your enigma version is
+too low to get fixed by the DV plugin!"
+call FIX_OUTER_VM
+////////////////////
+NO_VM_TO_FIX:
+call CHECK_FOR_OLDER_VMS
+////////////////////
+VM_2_ALREADY_FIXED:
+call IAT_CHECK
+cmp IATLOG, 01
+je IAT_IS_LOGGED
+call GET_IAT_DATA
+cmp IATSTART, 00
+jne IAT_IS_LOGGED
+log ""
+log "No IAT was found!"
+log ""
+pause
+pause
+ret
+////////////////////
+IAT_IS_LOGGED:
+pusha
+mov eax, IATSTART
+mov ecx, IATEND
+sub ecx, 04
+gpa "DllFunctionCall", "msvbvm60.dll"
+mov edx, $RESULT
+gn [eax]
+mov DLL_NAMES, $RESULT_1
+scmpi DLL_NAMES, "msvbvm60"
+jne NO_VB_FILE
+mov E_VB_APP, 00
+mov E_VB_APP, "Yes"
+////////////////////
+IAT_LOOP_MET:
+cmp eax, ecx
+je IAT_CHECKED_ALL
+add eax, 04
+cmp [eax], 00
+jne IAT_LOOP_MET
+////////////////////
+FIND_FUNCTION_CALLER:
+find CODESECTION, #68????????B8????????FF??FF#
+cmp $RESULT, 00
+je NO_FUNCTION_SIGN_FOUND
+mov esi, CODESECTION
+////////////////////
+FIND_FUNCTION_CALLER_MORE:
+find esi, #68????????B8????????FF??FF#
+cmp $RESULT, 00
+je NO_MORE_FUNCTION_SIGN_FOUND
+mov esi, $RESULT
+mov edi, [esi+01]
+mov ebx, [edi]
+mov ebp, [edi+04]
+gstr ebx
+mov DLL_WHAT, $RESULT
+gstr ebp
+mov API_WHAT, $RESULT
+inc FUNC_COUNT
+eval "{FUNC_COUNT} | FunctionCaller: {esi} | {DLL_WHAT} | {API_WHAT}"
+log $RESULT, ""
+log ""
+add esi, 0E
+jmp FIND_FUNCTION_CALLER_MORE
+////////////////////
+NO_MORE_FUNCTION_SIGN_FOUND:
+eval "Found {FUNC_COUNT} Function callers!"
+log $RESULT, ""
+jmp FILL_FUNCTION_API
+////////////////////
+NO_FUNCTION_SIGN_FOUND:
+log "Found no Function callers!"
+log "Maybe the file is a VB full basic one!"
+log "Or the missing API is _vbaEnd!"
+eval "Missing import will filled now at: {eax} with DllFunctionCall API!"
+log $RESULT, ""
+////////////////////
+FILL_FUNCTION_API:
+mov [eax], edx
+log "DllFunctionCall was filled into IAT!"
+jmp NO_VB_FILE
+////////////////////
+IAT_CHECKED_ALL:
+log "Found no free loaction for possible missing DllFunctionCall API!"
+////////////////////
+NO_VB_FILE:
+popa
+mov E_EXTRA_FILES, 00
+mov E_EXTRA_FILES, "No"
+find ENIGMASEC, #BE????????BB????????803B0074??8B4304#
+cmp $RESULT, 00
+je CHECK_IAT_INSIDE
+mov FOUNDER, $RESULT
+mov F_COUNT, [FOUNDER+01]
+mov F_SIGN,  [FOUNDER+06]
+find FOUNDER, #83C3??4E75B?5?5?5?#
+cmp $RESULT, 00
+jne FOUND_E_1
+log ""
+log "Can't find the counter!"
+log ""
+log "Abord this check process!"
+jmp CHECK_IAT_INSIDE
+////////////////////
+FOUND_E_1:
+mov F_ADD, [$RESULT+02], 01
+cmp F_ADD, 20
+je FOUND_E_2
+log ""
+log "Counter does not match with 20!"
+log ""
+eval "Counter at: {F_SIGN} | Counter Dis Size is: {F_ADD} | Counter Hooks:
+{F_COUNT}"
+log $RESULT, ""
+log ""
+log "Abord this check process!"
+log ""
+jmp CHECK_IAT_INSIDE
+////////////////////
+FOUND_E_2:
+alloc 1000
+mov F_SEC, $RESULT
+mov [F_SEC],
+#60BBAAAAAA0ABD0000000009ED743F8B4314BFAAAAAAAAB9AAAAAAAAF2AF74064D83C320EBE5FF7304
+E8ABE457AA09C074EEFF730C50E89EE457AA09C074E18947FCEBDC619090#
+mov [F_SEC+3F], #39431474058947FCEBD78B4310EBF6619090#
+mov [F_SEC+02], F_SIGN
+mov [F_SEC+07], F_COUNT
+mov [F_SEC+13], IATSTART
+pusha
+mov eax, IATSIZE
+div eax, 04
+mov [F_SEC+18], eax
+popa
+eval "call {LoadLibraryA}"
+asm F_SEC+29, $RESULT
+eval "call {GetProcAddress}"
+asm F_SEC+36, $RESULT
+mov bak, eip
+mov eip, F_SEC
+bp F_SEC+4F
+run
+bc
+add FOUNDER, 10
+mov eip, bak
+log ""
+log "Found & Check of IAT MEM RD 1!"
+log ""
+find FOUNDER, #BE????????BB????????803B0074??8B4304#
+cmp $RESULT, 00
+je CHECK_IAT_INSIDE
+mov FOUNDER, $RESULT
+mov F_COUNT, [FOUNDER+01]
+mov F_SIGN,  [FOUNDER+06]
+mov [F_SEC+02], F_SIGN
+mov [F_SEC+07], F_COUNT
+find FOUNDER, #83C3??4E75B?5?5?5?#
+cmp $RESULT, 00
+jne FOUND_E_3
+log ""
+log "Can't find the counter!"
+log ""
+log "Abord this check process!"
+jmp CHECK_IAT_INSIDE
+////////////////////
+FOUND_E_3:
+mov F_ADD, [$RESULT+02], 01
+cmp F_ADD, 20
+je FOUND_E_4
+log ""
+log "Counter does not match with 20!"
+log ""
+eval "Counter at: {F_SIGN} | Counter Dis Size is: {F_ADD} | Counter Hooks:
+{F_COUNT}"
+log $RESULT, ""
+log ""
+log "Abord this check process!"
+log ""
+jmp CHECK_IAT_INSIDE
+////////////////////
+FOUND_E_4:
+mov eip, F_SEC
+bp F_SEC+4F
+run
+bc
+log ""
+log "Found & Check of IAT MEM RD 2!"
+log ""
+mov eip, bak
+////////////////////
+CHECK_IAT_INSIDE:
+call IAT_IN_OUT_CHECK
+cmp EXTRA_FILES, 00
+je NO_EXTRA_FILES_TO_ADJUST
+cmp NOTESEC, 00
+je READ_DLL_EXTRA_NORMAL
+mov EXTRA_FILES_SEC,   NOTESEC
+mov EXTRA_FILES_SEC_2, NOTESEC_2
+mov EXTRA_NAME_SEC,    NOTESEC_NAME
+mov EXTRA_NAME_SEC_2,  NOTESEC_NAME_2
+////////////////////
+READ_DLL_EXTRA_NORMAL:
+call READ_DLL_LOADER_EXTRA
+////////////////////
+NO_EXTRA_FILES_TO_ADJUST:
+mov E_LOADER_SDK, 00
+mov E_LOADER_SDK, "Enigma Loader SDK Scan was disbaled!"
+cmp READ_DLL_LOADER, 00
+je NO_SDK_CHECK
+call SDK_CHECKING
+////////////////////
+NO_SDK_CHECK:
+log ""
+log E_LOADER_SDK, ""
+log ""
+call TLS_FIX
+call GET_EXTENSION
+log ""
+eval "Not Fixable VM Found: {NOT_FIXABLE_VM_FOUND}"
+log $RESULT, ""
+log ""
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Do you wanna let dump the file? {L1}
+{PROCESSNAME_2}.{EXTENSION} {L1}{LINES} {L1}NOTE: Not fixable VM found =
+{NOT_FIXABLE_VM_FOUND} {L1}1 = YES 0 = NO {L1}If yes then your dump will not run! \
+r\n\r\n{LINES} \r\n{MY}"
+msgyn $RESULT
+cmp $RESULT, 01
+jne NO_DUMPING
+call DUMP_FILE
+log ""
+log "File was dumped by script!"
+log ""
+////////////////////
+NO_DUMPING:
+pusha
+mov eax, IATSTART
+sub eax, MODULEBASE
+mov IATRVA, eax
+popa
+log ""
+log "---------- IAT DATA ----------"
+log ""
+eval "IATSTART VA:   {IATSTART}"
+log $RESULT, ""
+eval "IATSTART RVA:  {IATRVA}"
+log $RESULT, ""
+eval "IATSIZE:       {IATSIZE}"
+log $RESULT, ""
+log "------------------------------"
+call FIND_POSSIBLE_WRONG_TLS_POINTER_IN_APP
+call ESP_WRITE
+call WRITE_REGISTER
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}UNPACK - OVERVIEW: {PROCESSNAME_2} {L2}
+{LINES2}{LINES2} {L1}Overlay Found:       {OVERLAY_SCAN} {L2}Dumped Loader:
+{LOADER_DUMPED} {L2}{ENIGMA_VERSION_SCAN} {L2}{PROTECTED_AT} {L2}Watermark:
+{WATERMARK_SCAN} {L2}RegSheme:               {REGSHEME_SCAN} {L2}RegSheme Patched:
+{E_REGSHEME_PATCH} {L2}HWID Found:           {E_HWID_SCAN} {L2}HWID Patched:
+{E_HWID_PATCHED} {L2}Version Type:           {VERSION_TYPE} {L2}{LINES2}{LINES2}
+{L2}Inner VM Found:       {E_INTERN_VM} {L2}Inner VM Fixed:
+{E_INTERN_VM_FIXED} {L1}Outer VM Found:      {E_OUTER_VM} {L2}Outer VM Used:
+{E_OUTER_USED} {L2}Outer VM Fixed:        {E_OUTER_VM_FIXED} {L2}{LINES2}{LINES2}
+{L2}Special Anti Patched: {SPECIAL_E_ANTI} {L2}{LINES2}{LINES2}{L2}Stolen Code
+Found:   {E_STOLEN_FOUND} {L2}Stolen Code Fixed:    {E_STOLEN_FIXED} {L2}{LINES2}
+{LINES2}{L2}OEP Moved:               {E_OEP_MOVE} {L2}Old VM Found:
+{E_OLD_VM_SIGN} {L2}Visual Basic:               {E_VB_APP} {L2}{LINES2}{LINES2}
+{L2}Extra Files:                {E_EXTRA_FILES} {L2}Extra SDK Used:
+{E_SDK_USED} {L2}Loader SDK Used:      {E_LOADER_SDK} {L2}TLS CB Found:
+{E_TLS_FOUND} {L2}Dumped File:              {E_FILE_DUMPED} {L1}{LINES2}{LINES2}
+{L2}IATSTART:    {IATSTART} {L2}IATSIZE:       {IATSIZE} \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Finished Unpack Process of: {PROCESSNAME_2}.
+{EXTENSION} {L1}Written by \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+log ""
+eval "Finished Unpack Process of: {PROCESSNAME_2}.{EXTENSION}"
+log $RESULT, ""
+log ""
+log "Written by"
+log ""
+log LINES, ""
+log ""
+log MY, ""
+log ""
+cmp [ExitProcess], #EBFE#, 02
+jne KEEP_EXIT_PATCH
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Restore ExitProcess Patch?Press YES!
+{L1}Some targets does not run without to keep this patch! {L1}Keep it and later
+close the app with Olly Alt+F2 or press X button! {L1}Press NO to keep the
+ExitProcess patch! \r\n\r\n{LINES} \r\n{MY}"
+msgyn $RESULT
+cmp $RESULT, 01
+jne KEEP_EXIT_PATCH
+call RESTORE_EXIT
+////////////////////
+KEEP_EXIT_PATCH:
+log ""
+log ""
+cmp WINEX_BAK, 00
+je DONT_START_FIXING
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Do you want to fix your file
+{PROCESSNAME_2}.{EXTENSION}? {L1}Press Yes to start your fixing tool! \r\n\r\
+n{LINES} \r\n{MY}"
+msgyn $RESULT
+cmp $RESULT, 01
+jne DONT_START_FIXING
+alloc 1000
+pusha
+mov edi, $RESULT
+mov [edi], FIX_TOOL
+mov esi, edi
+add esi, 500
+mov [esi], "SHELL32.dll"
+mov eax, 00
+jmp EXE_SHELL
+exec
+push esi
+call {LoadLibraryA}
+ende
+cmp eax, 00
+jne EXE_SHELL
+log ""
+log "Can't load Shell32.dll"
+log ""
+jmp SHELL_OVER
+////////////////////
+EXE_SHELL:
+mov eax, 00
+jmp SHELL_SCRIPT
+alloc 1000
+mov SHELL_SEC, $RESULT
+mov [SHELL_SEC], #6A055050575050E88A34AAA99090#
+eval "call {ShellExecuteA}"
+asm SHELL_SEC+07, $RESULT
+mov bak, eip
+mov eip, SHELL_SEC
+bp SHELL_SEC+0C
+esto
+bc
+mov eip, bak
+free SHELL_SEC
+jmp SHELL_OVER
+////////////////////
+SHELL_SCRIPT:
+mov [WinExec], WINEX_BAK
+alloc 1000
+mov SHELL_SEC, $RESULT
+mov [SHELL_SEC], #60B800000000906A0557E86BAA26AA619090#
+eval "call {WinExec}"
+asm SHELL_SEC+0A, $RESULT
+mov bak, eip
+mov eip, SHELL_SEC
+bp SHELL_SEC+10
+esto
+bc
+mov eip, bak
+free SHELL_SEC
+jmp SHELL_OVER
+exec
+pushad
+push 5
+push edi
+call {WinExec}
+popad
+jmp SHELL_OVER
+exec
+pushad
+push 01
+push eax
+push eax
+push edi
+push eax
+push eax
+call {ShellExecuteA}
+popad
+ende
+////////////////////
+SHELL_OVER:
+free edi
+popa
+call ESP_WRITE
+call WRITE_REGISTER
+////////////////////
+DONT_START_FIXING:
+cmp THREE_VERSION, 01
+jne NO_VBOX_FOUND
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Found VBox Sign! {L1}It can be possible that
+ENIGMA has stored some files which will extracted into memory via API Hooks!
+{L1}Press >> Yes << if you want to check & dump the VBox files after OEP! {L1}Press
+>> No << to disable the check! {L1}Just start this check after dump & fixing! \r\n\
+r\n{LINES} \r\n{MY}"
+msgyn $RESULT
+cmp $RESULT, 01
+jne NO_VBOX_FOUND
+mov AFTER_OEP_SCAN, 01
+pause
+/*
+JUST RESUME THE SCRIPT IF YOU ARE READY!
+AFTER DUMP & FIXING OF YOUR MAIN FILE!
+LCF-AT
+*/
+////////////////////
+EXTRA_1_CHECK:
+cmp EXTRA_1, 00
+je EXTRA_2_CHECK
+bp EXTRA_1
+bpgoto EXTRA_1, MODERN_EXTRA_FILES
+////////////////////
+EXTRA_2_CHECK:
+cmp EXTRA_2, 00
+je EXTRA_3_CHECK
+bp EXTRA_2
+bpgoto EXTRA_2, MODERN_EXTRA_FILES
+////////////////////
+EXTRA_3_CHECK:
+cmp EXTRA_3, 00
+je EXTRA_4_CHECK
+bp EXTRA_3
+bpgoto EXTRA_3, MODERN_EXTRA_FILES
+////////////////////
+EXTRA_4_CHECK:
+cmp EXTRA_4, 00
+je EXTRA_5_CHECK
+bp EXTRA_4
+bpgoto EXTRA_4, MODERN_EXTRA_FILES
+////////////////////
+EXTRA_5_CHECK:
+cret
+esto
+pause
+pause
+////////////////////
+NO_VBOX_FOUND:
+cret
+pause
+pause
+ret
+////////////////////
+TLS_FIX:
+cmp TLS_TABLE_ADDRESS, 00
+je NO_TLS_PRESENT
+pusha
+mov eax, TLS_TABLE_ADDRESS+MODULEBASE
+cmp [eax+0C], 00
+je NO_CALL_BACK_FOUND
+mov ecx, [eax+0C]
+cmp [ecx], 00
+je EMPTY_CALLBACK
+mov [ecx], 00
+mov E_TLS_FOUND, 00
+mov E_TLS_FOUND, "Yes-Removed"
+log ""
+log "TLS CALLBACK DELETED!"
+log ""
+////////////////////
+EMPTY_CALLBACK:
+mov [eax+0C], 00
+mov E_TLS_FOUND, 00
+mov E_TLS_FOUND, "Yes-Pointer Removed"
+log ""
+log "TLS CALLBACK POINTER DELETED!"
+log ""
+popa
+ret
+////////////////////
+NO_CALL_BACK_FOUND:
+popa
+log ""
+log "No TLS CALLBACK FOUND!"
+log ""
+mov E_TLS_FOUND, 00
+mov E_TLS_FOUND, "Not Used"
+ret
+////////////////////
+NO_TLS_PRESENT:
+log ""
+log "No TLS FOUND!"
+log ""
+mov E_TLS_FOUND, 00
+mov E_TLS_FOUND, "Not Used"
+ret
+////////////////////
+DUMP_FILE:
+alloc 1000
+mov DUMPSEC, $RESULT
+mov [DUMPSEC],
+#60546A40680010000068AAAAAAAAE897AA0CAAB8AAAAAAAA33D2668B50068BF081C600010000B90800
+00008BFE83C708F2A4664A6683FA00740583C620EBE76190909090#
+mov [DUMPSEC+0A], MODULEBASE
+eval "call {VirtualProtect}"
+asm DUMPSEC+0E, $RESULT
+mov [DUMPSEC+14], PE_INFO_START
+bp DUMPSEC+40
+mov tmp, eip
+mov eip, DUMPSEC
+run
+bc
+mov eip, tmp
+free DUMPSEC
+mov [PE_INFO_START+3C], 1000
+mov [PE_INFO_START+54], 1000
+mov [PE_INFO_START+28], eip-MODULEBASE
+pusha
+////////////////////
+READ_SEC_ATRI:
+mov eax, 00
+mov eax, [PE_INFO_START+11C]
+shr eax, 1C
+cmp al, 07
+ja IS_WRITEABLE
+add [PE_INFO_START+11C], 80000000
+jmp READ_SEC_ATRI
+////////////////////
+IS_WRITEABLE:
+popa
+eval "{PROCESSNAME_2} - Dump.{EXTENSION}"
+dm MODULEBASE, IMAGESIZE_DIRECT, $RESULT
+mov E_FILE_DUMPED, 00
+mov E_FILE_DUMPED, "Yes"
+ret
+////////////////////
+DUMP_DLL:
+alloc 1000
+mov DUMPSEC, $RESULT
+mov [DUMPSEC],
+#6060546A40680010000068AAAAAAAAE897AA0CAAB8AAAAAAAA33D2668B50068BF081C600010000B908
+0000008BFE83C708F2A4664A6683FA00740583C620EBE7616190909090#
+mov [DUMPSEC+0B], EN_BASE
+eval "call {VirtualProtect}"
+asm DUMPSEC+0F, $RESULT
+mov [DUMPSEC+15], PE_EN
+bp DUMPSEC+42
+mov tmp, eip
+mov eip, DUMPSEC
+run
+bc
+mov eip, tmp
+free DUMPSEC
+eval "{EN_DLL_NAME}"
+dm EN_BASE, EN_SIZE, $RESULT
+mov [esp-40], EN_BASE
+mov [esp-3C], EN_SIZE
+inc EXTRA_FILES
+call LOG_EXTRA_FILES
+ret
+////////////////////
+LOG_EXTRA_FILES:
+cmp WRITTEN_DATA, 01
+je READ_EXTRA
+alloc 1000
+mov EXTRA_FILES_SEC, $RESULT
+mov EXTRA_FILES_SEC_2, $RESULT
+alloc 1000
+mov EXTRA_NAME_SEC, $RESULT
+mov EXTRA_NAME_SEC_2, $RESULT
+////////////////////
+READ_EXTRA:
+pusha
+mov ecx, EXTRA_NAME_SEC
+mov [ecx], EN_DLL_NAME
+len [ecx]
+add ecx, $RESULT
+inc ecx
+mov EXTRA_NAME_SEC, ecx
+mov eax, EXTRA_FILES_SEC
+////////////////////
+NULL_FIND:
+cmp [eax], 00
+je WRITE_EXTRA
+add eax, 04
+jmp NULL_FIND
+////////////////////
+WRITE_EXTRA:
+mov [eax], EN_BASE
+mov WRITTEN_DATA, 01
+ret
+////////////////////
+SDK_CHECKING:
+pusha
+mov eax, EN_FIRSTSEC_2
+exec
+push eax
+call {LoadLibraryA}
+ende
+cmp eax, 00
+jne ENIGMA_DLL_NEW_WAS_LOADED
+pause
+pause
+log "can not load enigma dll!"
+ret
+////////////////////
+ENIGMA_DLL_NEW_WAS_LOADED:
+mov EN_FIRSTSEC, EN_FIRSTSEC_2+100
+mov ebx, 00
+mov EN_DLL_NEW_BASE, eax
+mov ecx, EN_FIRSTSEC
+mov ebx, ENIGMASEC
+mov edi, eax
+mov esi, ebx
+add eax, [ecx]
+add ebx, [ecx]
+////////////////////
+SEARCH_EX_STORER_1:
+mov tapa, ebx
+mov ONE_BASE, edi
+mov edi, IATSTART
+xchg ebp, ecx
+mov ecx, IATSIZE
+xchg eax, ebx
+div ecx, 04
+exec
+REPNE SCAS DWORD PTR ES:[EDI]
+ende
+cmp [edi-04], tapa
+je POINTER_FOUND_2
+mov edi, ONE_BASE
+xchg ecx, ebp
+xchg ebx, eax
+jmp ADD_EXPS
+////////////////////
+POINTER_FOUND_2:
+sub edi, 04
+mov $RESULT, edi
+mov temp, $RESULT
+mov edi, ONE_BASE
+xchg ecx, ebp
+xchg ebx, eax
+mov [temp], eax
+gn eax
+mov EX_NAME, $RESULT
+eval "Export Adjusted at: {temp} | {eax} | {EX_NAME}"
+log $RESULT, ""
+mov E_LOADER_SDK, 00
+mov E_LOADER_SDK, "Yes"
+////////////////////
+ADD_EXPS:
+add ecx, 04
+cmp [ecx], 00
+je FOUND_THE_EX_NOT_1
+mov eax, 00
+mov ebx, 00
+mov eax, edi+[ecx]
+mov ebx, esi+[ecx]
+jmp SEARCH_EX_STORER_1
+////////////////////
+FOUND_THE_EX_NOT_1:
+popa
+ret
+////////////////////
+READ_DLL_LOADER_EXTRA:
+mov LOG_RVAS, 00
+mov LOG_RVAS_2, 00
+mov LOG_RVAS_3, 00
+alloc 3000
+mov LOG_RVAS, $RESULT
+mov LOG_RVAS_2, $RESULT
+mov LOG_RVAS_3, $RESULT
+mov DLL_PE, [EXTRA_FILES_SEC]
+mov E_EXTRA_FILES, 00
+mov E_EXTRA_FILES, "Yes"
+pusha
+mov esi, 00
+mov edi, 00
+mov eax, DLL_PE
+mov ecx, [eax+3C]
+add ecx, eax
+mov esi, [ecx+78]
+mov edi, [ecx+7C]
+cmp esi, 00
+je NO_EXPORTS_FOUND_EXTRA
+mov DLL_IMAGE, [ecx+50]
+mov EXPORT, esi
+add EXPORT, eax
+mov ebp, [EXPORT+0C]+eax
+mov ebx, ebp
+////////////////////
+NAME_LOOP:
+gstr ebx
+mov DLL_NAME, $RESULT
+log "----------------------------------"
+log DLL_NAME, ""
+log "------------------------------------------------------------"
+mov ecx, esi+eax
+mov edx, [ecx+14]
+mov ebx, [ecx+18]
+mov ebp, [ecx+1C]+eax
+mov edi, [ecx+20]+eax
+mov esi, [ecx+24]+eax
+mov counta, 00
+mov edx, counta
+mov eax, edx
+mov [LOG_RVAS], DLL_NAME
+add LOG_RVAS, 100
+////////////////////
+START_READ_EXPORTS_EXTRA:
+mov eax, edx
+exec
+mov ax,word ptr ds:[esi+eax*2]
+mov eax, edx
+MOVZX EAX,WORD PTR DS:[ESI+EAX*2]
+MOV EAX,DWORD PTR DS:[EBP+EAX*4]
+ende
+mov [LOG_RVAS], eax
+add LOG_RVAS, 04
+mov RVA, eax
+add eax, DLL_PE
+mov VA, eax
+mov eax, edx
+exec
+MOV EAX,DWORD PTR DS:[EDI+EAX*4]
+ende
+add eax, DLL_PE
+inc counta
+inc edx
+mov EN_API, eax
+jmp NAME_CALC_EXTRA
+////////////////////
+NAME_CALC_EXTRA:
+gstr EN_API
+mov EN_API, $RESULT
+eval "RVA: {RVA} | VA: {VA} | Func: {EN_API}"
+log $RESULT, ""
+lbl VA, EN_API
+cmt VA, EN_API
+cmp edx, ebx
+je DLL_END_READ_EXTRA
+jmp START_READ_EXPORTS_EXTRA
+////////////////////
+DLL_END_READ_EXTRA:
+popa
+log "------------------------------------------------------------"
+log ""
+log ""
+add EXTRA_FILES_SEC, 04
+pusha
+exec
+push {LOG_RVAS_2}
+call {LoadLibraryA}
+ende
+mov LOADED_EXTRA, eax
+cmp eax, 00
+jne DLL_WAS_SUCCESFULLY_LOADED
+popa
+pause
+pause
+ret
+////////////////////
+DLL_WAS_SUCCESFULLY_LOADED:
+mov ebx, 00
+mov eax, LOADED_EXTRA
+mov ecx, LOG_RVAS_2+100
+mov edx, EXTRA_FILES_SEC-04
+mov ebx, [edx]
+cmp ebx, 00
+je SECTION_ENDE_OF_READ
+mov edi, eax
+mov esi, ebx
+add eax, [ecx]
+add ebx, [ecx]
+refresh eip
+////////////////////
+SEARCH_EX_STORER:
+mov tapa, ebx
+mov ONE_BASE, edi
+mov edi, IATSTART
+xchg ebp, ecx
+mov ecx, IATSIZE
+xchg eax, ebx
+div ecx, 04
+exec
+REPNE SCAS DWORD PTR ES:[EDI]
+ende
+cmp [edi-04], tapa
+je POINTER_FOUND
+mov edi, ONE_BASE
+xchg ecx, ebp
+xchg ebx, eax
+jmp AFTER_ONE
+pause
+pause
+pause
+////////////////////
+POINTER_FOUND:
+sub edi, 04
+mov $RESULT, edi
+mov temp, $RESULT
+mov edi, ONE_BASE
+xchg ecx, ebp
+xchg ebx, eax
+mov [temp], eax
+gn eax
+mov EX_NAME, $RESULT
+eval "Export Adjusted at: {temp} | {eax} | {EX_NAME}"
+log $RESULT, ""
+mov E_SDK_USED, 00
+mov E_SDK_USED, "Yes"
+////////////////////
+AFTER_ONE:
+add ecx, 04
+cmp [ecx], 00
+je FOUND_THE_EX_NOT
+mov eax, 00
+mov ebx, 00
+mov eax, edi+[ecx]
+mov ebx, esi+[ecx]
+jmp SEARCH_EX_STORER
+////////////////////
+FOUND_THE_EX_NOT:
+popa
+inc NEW_EX_MAKED
+cmp EXTRA_FILES, NEW_EX_MAKED
+free LOG_RVAS_3
+jne READ_DLL_LOADER_EXTRA
+////////////////////
+SECTION_ENDE_OF_READ:
+popa
+gmemi LOG_RVAS_3, MEMORYBASE
+cmp $RESULT, 00
+je NOT_FREE_THIS
+free LOG_RVAS_3
+////////////////////
+NOT_FREE_THIS:
+ret
+////////////////////
+NO_EXPORTS_FOUND_EXTRA:
+popa
+log "Found no exports in extra file!"
+ret
+////////////////////
+GET_EXTENSION:
+cmp GETEX, 01
+jne GET_EXTENSION_OF
+ret
+////////////////////
+GET_EXTENSION_OF:
+mov GETEX, 01
+GPI EXEFILENAME
+mov FILENAME, $RESULT
+len FILENAME
+mov FILENAME_LEN, $RESULT
+GPI CURRENTDIR
+mov FOLDER, $RESULT
+len FOLDER
+mov FOLDERLEN, $RESULT
+alloc 1000
+mov EXTENSIONSEC, $RESULT
+mov [EXTENSIONSEC], FILENAME
+mov [EXTENSIONSEC+500], FOLDER
+pusha
+mov eax, EXTENSIONSEC
+mov ecx, EXTENSIONSEC+500
+add eax, FILENAME_LEN
+mov edx, FILENAME_LEN
+////////////////////
+FIND_EX:
+cmp edx, 00
+je NO_EXTENSION_USED
+cmp [eax], 2E, 01
+je EX_FOUND
+dec eax
+dec edx
+jmp FIND_EX
+////////////////////
+NO_EXTENSION_USED:
+log "No File Extension Found!"
+mov EXTENSION, "exe"
+popa
+ret
+////////////////////
+EX_FOUND:
+inc eax
+readstr [eax], 03
+mov EXTENSION, $RESULT
+str EXTENSION
+mov EXTENSION, EXTENSION
+popa
+ret
+////////////////////
+IAT_CHECK:
+cmp IATSTART, 00
+je NO_IAT_LOGGED
+log IATSTART
+add IATEND, 04
+log IATEND
+log API_IN
+log ""
+pusha
+mov eax, IATEND
+sub eax, IATSTART
+mov IATSIZE, eax
+popa
+log IATSIZE
+mov IATLOG, 01
+ret
+////////////////////
+NO_IAT_LOGGED:
+mov IATLOG, 00
+ret
+////////////////////
+FIND_VM_ROUTINES:
+find ENIGMASEC, #609CB201BE00000000#
+cmp $RESULT, 00
+je NOT_FOUND_1
+mov VM_INT, $RESULT
+mov E_OUTER_VM, 00
+mov E_OUTER_VM, "Yes"
+mov line, 00
+eval "JMP 0{VM_INT}"
+findcmd LASTSEC, $RESULT
+////////////////////
+CALC_B:
+mov BAK, 00
+gref line
+cmp $RESULT, 00
+je finished_3
+mov BAK, $RESULT
+cmp [BAK-05], 68, 01
+je VM_TABLE_START_3
+inc line
+jmp CALC_B
+////////////////////
+VM_TABLE_START_3:
+sub BAK, 5
+mov JTABLE, BAK
+mov $RESULT, JTABLE
+mov E_OUTER_USED, 00
+mov E_OUTER_USED, "Yes"
+jmp GET_INTERN_VM_DATA_2
+////////////////////
+finished_3:
+log ""
+log "Extern Outer VM not used!"
+log ""
+mov E_OUTER_USED, 00
+mov E_OUTER_USED, "No"
+ret
+////////////////////
+GET_INTERN_VM_DATA_2:
+mov JTABLE, $RESULT
+add JTABLE, 05
+gci JTABLE, DESTINATION
+mov LOOP,   $RESULT
+sub JTABLE, 05
+findop LOOP,#E8#
+mov LOOP,   $RESULT
+inc LOOP
+find LOOP,  #E8#
+mov LOOP,   $RESULT
+inc LOOP
+find LOOP,  #E8#
+mov LOOP,   $RESULT
+gci LOOP,   DESTINATION
+mov LOOP,   $RESULT
+find LOOP, #A1??????????04F083C0FD83F8#
+cmp $RESULT, 00
+jne VM_TABLE_HOLDER
+log "Found no newer ENIGMA VM so your target used a older VM which is not supported
+by the DV plugin!"
+log ""
+mov OLDER_VM_USED, 01
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Found no newer ENIGMA VM so your target used
+a older VM which is not supported by the DV plugin! \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+pause
+pause
+ret
+pause
+////////////////////
+SEARCH_OLD_SIGN:
+find LOOP,  #A1????????8B????3D#
+cmp $RESULT, 00
+jne VM_TABLE_HOLDER
+pause
+pause
+pause
+////////////////////
+VM_TABLE_HOLDER:
+mov pointer,    $RESULT
+mov pointerin, [pointer+1]
+mov pointerin, [pointerin]
+log ""
+log JTABLE, "JUMP TABLE AT:"
+log pointerin, "VM TABLE AT: "
+log ENIGMASEC, "ENIGMASEC:   "
+log ""
+log JTABLE, ""
+log pointerin, ""
+log ENIGMASEC, ""
+log LASTSEC, ""
+mov JTABLE_IN, [JTABLE]
+mov VM_OUT_FOUND, 01
+ret
+////////////////////
+NOT_FOUND_1:
+log "Found No Modern VM Routine!"
+mov VM_OUT_FOUND, 00
+ret
+////////////////////
+FIX_OUTER_VM:
+mov bak, eip
+alloc 2000
+mov PATCHSEC,   $RESULT
+mov PATCHSEC_2, $RESULT
+mov [PATCHSEC],     TITAN
+mov [PATCHSEC+100], DV_DLL
+mov [PATCHSEC+200], VM_IN
+mov [PATCHSEC+260], VM_OUT
+add PATCHSEC, 1000
+mov [PATCHSEC],
+#60BEAAAAAAAA56E89E9A8AA909C0744281C60001000056E88E9A8AA909C074348BF881C60001000056
+57E87B9A8AA909C074238BE883C6605657E86B9A8AA909C074159068AAAAAAAA68BBBBBBBBFFE561906
+190619061906190#
+mov [PATCHSEC+02], PATCHSEC_2
+eval "call {LoadLibraryA}"
+asm PATCHSEC+07, $RESULT
+eval "call {LoadLibraryA}"
+asm PATCHSEC+17, $RESULT
+eval "call {GetProcAddress}"
+asm PATCHSEC+2A, $RESULT
+eval "call {GetProcAddress}"
+asm PATCHSEC+3A, $RESULT
+mov [PATCHSEC+45], pointerin
+mov [PATCHSEC+4A], PATCHSEC+50
+mov [PATCHSEC+45], pointerin
+add [PATCHSEC+24], 60
+sub [PATCHSEC+37], 60
+bp PATCHSEC+50
+bp PATCHSEC+53
+bp PATCHSEC+55
+bp PATCHSEC+57
+bp PATCHSEC+59
+mov eip, PATCHSEC
+call GET_EXTENSION
+scmpi EXTENSION, "exe"
+je NORMAL_RUN_NO_MOD_2
+mov [PATCHSEC+45], ENIGMASEC
+cmp EN_DLL_BAK, 01
+je BP_VM
+gmemi ENIGMASEC, MEMORYSIZE
+mov ENIGMASEC_SIZE, $RESULT
+alloc ENIGMASEC_SIZE
+mov ENIGMASEC_SIZE_BAK, $RESULT
+pusha
+mov esi, ENIGMASEC
+mov edi, ENIGMASEC_SIZE_BAK
+mov ecx, ENIGMASEC_SIZE-10
+exec
+pushad
+REP MOVS BYTE PTR ES:[EDI],BYTE PTR DS:[ESI]
+popad
+ende
+popa
+////////////////////
+BP_VM:
+bp PATCHSEC+1C
+run
+cmp eip, PATCHSEC+1C
+jne NORMAL_AGAIN_2
+mov ENIGMA_BASE, eax
+mov ENIGMA_BASE_2, eax
+add ENIGMA_BASE_2, 91DE+14A7A
+add eax, 14A7A
+eval "jmp {ENIGMA_BASE_2}"
+asm eax, $RESULT
+mov eax, ENIGMA_BASE+1DCC9
+eval "{PROCESSNAME_2}.{EXTENSION}"
+mov [eax], $RESULT
+mov [ENIGMA_BASE_2],
+#6081C7C9DC0100897C242061FF970CE001006081C7804A0100897C24C061FF6424A090#
+bc PATCHSEC+1C
+mov eax, ENIGMA_BASE
+mov ENIGMA_BASE, eax
+mov ENIGMA_BASE_2, eax
+add ENIGMA_BASE_2, 91DE+14A7A+22
+add eax, 144F4
+eval "jmp {ENIGMA_BASE_2}"
+asm eax, $RESULT
+mov [ENIGMA_BASE_2],
+#608B7C242881C7C9DC0100897C24208B7C242881C70CE001008B3F897C24C0613EFF5424A0608B7C24
+2481C7FA440100EBC5#
+mov eax, ENIGMA_BASE
+mov ENIGMA_BASE, eax
+mov ENIGMA_BASE_2, eax
+add ENIGMA_BASE_2, 91DE+14A7A+54
+add eax, 1449E
+eval "jmp {ENIGMA_BASE_2}"
+asm eax, $RESULT
+mov [ENIGMA_BASE_2], #8B7C240481C7C9DC01008B7424048BB60CE00100E9DF67FFFF90909090#
+mov eax, ENIGMA_BASE
+jmp RUN_VM_OUT_2
+////////////////////
+NORMAL_RUN_NO_MOD_2:
+cmp FIX_OUTER_VM_INSIDE, 01
+jne NOT_INSIDE_2
+mov [PATCHSEC+45], ENIGMASEC
+////////////////////
+NOT_INSIDE_2:
+mov [PATCHSEC+45], 01
+////////////////////
+RUN_VM_OUT_2:
+run
+////////////////////
+NORMAL_AGAIN_2:
+bc
+cmp eip, PATCHSEC+50
+jne PROBLEM
+add esp, 04
+mov bak2, eip
+mov E_OUTER_VM_FIXED, 00
+mov E_OUTER_VM_FIXED, "Yes"
+ret
+////////////////////
+MEMORY_OEP_CHECK:
+gmemi eip, MEMORYBASE
+mov TESTOEP, $RESULT
+cmp TESTOEP, IMAGESIZE
+ja MEMORY_OEP_CHECK_2
+cmp TESTOEP, IMAGEBASE
+jb MEMORY_OEP_CHECK_2
+cmt eip, "<<<------ OEP"
+bphwc
+bc
+log "OEP located into main target!"
+log "NO OEP move needed!"
+ret
+////////////////////
+MEMORY_OEP_CHECK_2:
+mov TESTOEP, eip
+findop eip, #E9#
+cmp $RESULT, 00
+jne JUMP_TO_OEP_FOUND
+findop eip, #E9#
+cmp $RESULT, 00
+jne JUMP_TO_OEP_FOUND
+log "NO Jump to OEP found!"
+ret
+////////////////////
+JUMP_TO_OEP_FOUND:
+mov tmp, $RESULT
+pusha
+mov edi, 00
+mov eax, tmp
+mov ecx, [eax+01]
+add ecx, 5
+add ecx, eax
+mov tmp, ecx
+call GET_JMP_DEST
+cmp edi, 01
+je ITS_RIGHT_OEP_2
+mov edi, 00
+findop eip, #E9#
+cmp $RESULT, 00
+jne MEMORY_OEP_3_B
+////////////////////
+NO_OEP_JUMPER_2:
+log "Can't find jmp to OEP!!!"
+pause
+pause
+ret
+////////////////////
+MEMORY_OEP_3_B:
+mov tmp, $RESULT
+mov tmp2, $RESULT
+add tmp2, 05
+gci tmp, DESTINATION
+mov tmp, $RESULT
+mov edi, 00
+call GET_JMP_DEST
+cmp edi, 01
+je ITS_RIGHT_OEP_2
+////////////////////
+SECOND_RAPID_LOOP_2:
+mov edi, 00
+findop tmp2, #E9#
+cmp $RESULT, 00
+je NO_OEP_JUMPER_2
+mov tmp, $RESULT
+mov tmp2, $RESULT
+add tmp2, 05
+gci tmp, DESTINATION
+mov tmp, $RESULT
+mov edi, 00
+mov $RESULT, tmp2-05
+call GET_JMP_DEST
+cmp edi, 01
+je ITS_RIGHT_OEP_2
+jmp SECOND_RAPID_LOOP_2
+////////////////////
+ITS_RIGHT_OEP_2:
+popa
+bphwc
+bc
+cmt eip, "<<<------ OEP IN VM"
+mov OEPEND, $RESULT
+gci OEPEND, DESTINATION
+mov OEPJMP, $RESULT
+mov OEPJMP_2, $RESULT
+sub OEPEND, TESTOEP
+sub OEPJMP, OEPEND
+call READ_NEW_OEP_FREE_LOCATION
+call FIX
+cmt eip, "<<<------ OEP VM MOVE"
+bphwc
+bc
+log "OEP Commands was moved to OEP!"
+ret
+////////////////////
+CODESECTION_COPY:
+mov CODEBAK, CODESECTION
+ret
+////////////////////
+GET_IAT_DATA:
+refresh eip
+call CODESECTION_COPY
+////////////////////
+API_GET_LOOP:
+find CODEBAK, #FF25#
+cmp $RESULT, 00
+je FIND_CALL_API
+mov CODEBAK, $RESULT+02
+mov APICOMMAND, $RESULT
+mov APIADDRESS, [APICOMMAND+02]
+gn [APIADDRESS]
+cmp $RESULT, 00
+je API_GET_LOOP
+jmp NEW_IAT_STORE_LOG
+////////////////////
+FIND_CALL_API:
+call CODESECTION_COPY
+////////////////////
+FIND_CALL_API_2:
+find CODEBAK, #FF15#
+cmp $RESULT, 00
+je NO_FIXED_APIS_FOUND
+mov CODEBAK, $RESULT+02
+mov APICOMMAND, $RESULT
+mov APIADDRESS, [APICOMMAND+02]
+gn [APIADDRESS]
+cmp $RESULT, 00
+je FIND_CALL_API_2
+jmp NEW_IAT_STORE_LOG
+////////////////////
+NEW_IAT_STORE_LOG:
+gmemi APIADDRESS, MEMORYBASE
+mov IATLOCATION, $RESULT
+gmemi IATLOCATION, MEMORYSIZE
+mov IATLOCATION_SIZE, $RESULT
+////////////////////
+WRITE_IAT_LOCATION_READ:
+alloc 2000
+mov IATSEC, $RESULT
+mov [IATSEC],
+#60BDAAAAAAAABFAAAAAAAAB9AAAAAAAA8B0783F800751183E90483C70483F90077EE90909061909060
+8BC78BDFBFAAAAAAAAB9AAAAAAAAF2AE83F90074493947FF75F466817FFDFF15740866817FFDFF2575E
+4837D04007503894504894508C7450C000000008B003DAAAAAAAA720E3DAAAAAAAA7707C74500010000
+0061E994FFFFFF00000000837D040074138B1881FB000000107709837D0C08740AFF450C61E971FFFFF
+F9061E975FFFFFF#
+mov [IATSEC+02], IATSEC+300
+mov [IATSEC+07], IATLOCATION
+mov [IATSEC+0C], CODESECTION_SIZE-04
+mov [IATSEC+2E], CODESECTION
+mov [IATSEC+33], CODESECTION_SIZE-04
+mov [IATSEC+69], CODESECTION
+mov [IATSEC+70], IMAGESIZE
+bp IATSEC+26
+mov tmp, eip
+mov eip, IATSEC
+run
+bc
+pusha
+mov eax, 00
+mov ecx, 00
+mov edx, 00
+mov eax, [IATSEC+304]
+mov ecx, [IATSEC+308]
+cmp [eax], 00
+je NO_API_WAS_LOGGED
+mov esi, eax
+mov edi, ecx
+mov ebp, 10
+mov edx, 00
+////////////////////
+FIND_TOP:
+gn [eax]
+cmp $RESULT_2, 00
+je NO_INTO
+mov esi, eax
+sub eax, 04
+mov ebp, 10
+mov edx, 00
+jmp FIND_TOP
+////////////////////
+NO_INTO:
+sub eax, 04
+inc edx
+dec ebp
+cmp ebp, 00
+jne FIND_TOP
+mov ebp, 10
+mov edx, 00
+////////////////////
+FIND_BOTTOM:
+gn [ecx]
+cmp $RESULT_2, 00
+je NO_INTO_2
+mov edi, ecx
+add ecx, 04
+mov ebp, 10
+mov edx, 00
+jmp FIND_BOTTOM
+////////////////////
+NO_INTO_2:
+add ecx, 04
+inc edx
+dec ebp
+cmp ebp, 00
+jne FIND_BOTTOM
+add edi, 04
+mov IATSTART, esi
+mov IATEND, edi
+sub edi, esi
+mov IATSIZE, edi
+popa
+mov eip, tmp
+free IATSEC
+ret
+////////////////////
+NO_FIXED_APIS_FOUND:
+log ""
+log "Can't find normal API JMP amd Call commands!"
+log "Check your target for direct APIs and fix them with UIF!"
+log ""
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Can't find normal API JMP amd Call commands!
+{L1}Check your target for direct APIs and fix them with UIF! {L1}INFO: Maybe your
+target used a another protecting layer! \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+pause
+pause
+ret
+pause
+////////////////////
+NO_API_WAS_LOGGED:
+log ""
+log "NO API found!Problem!"
+log ""
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}NO API found! {L1}Problem! \r\n\r\n{LINES} \
+r\n{MY}"
+msg $RESULT
+pause
+pause
+ret
+pause
+pause
+////////////////////
+READ_DLL_LOADER:
+cmp READ_DLL_LOADER, 00
+je RETURN
+mov DLL_PE, ENIGMASEC
+pusha
+mov esi, 00
+mov edi, 00
+mov eax, DLL_PE
+mov ecx, [eax+3C]
+add ecx, eax
+mov esi, [ecx+78]
+mov edi, [ecx+7C]
+cmp esi, 00
+je NO_EXPORTS_FOUND
+mov DLL_IMAGE, [ecx+50]
+mov EXPORT, esi
+add EXPORT, eax
+mov ebp, [EXPORT+0C]+eax
+mov ebx, ebp
+////////////////////
+NAME_LOOP:
+gstr ebx
+mov DLL_NAME, $RESULT
+log "----------------------------------"
+log DLL_NAME, ""
+log "----------------------------------------------------------------------"
+mov ecx, esi+eax
+mov edx, [ecx+14]
+mov ebx, [ecx+18]
+mov ebp, [ecx+1C]+eax
+mov edi, [ecx+20]+eax
+mov esi, [ecx+24]+eax
+mov counta, 00
+mov edx, counta
+mov eax, edx
+eval "{PROCESSNAME_2} - {DLL_NAME} - Functions.txt"
+mov sFile, $RESULT
+wrt sFile, " "
+eval "{PROCESSNAME_2} - {DLL_NAME} - Breakpoint & Comment Functions.txt"
+mov sFile1, $RESULT
+wrt sFile1, " "
+alloc 2000
+mov EN_FIRSTSEC, $RESULT
+mov EN_FIRSTSEC_2, $RESULT
+mov [EN_FIRSTSEC], DLL_NAME
+add EN_FIRSTSEC, 100
+////////////////////
+START_READ_EXPORTS:
+mov eax, edx
+exec
+mov ax,word ptr ds:[esi+eax*2]
+mov eax, edx
+MOVZX EAX,WORD PTR DS:[ESI+EAX*2]
+MOV EAX,DWORD PTR DS:[EBP+EAX*4]
+ende
+mov [EN_FIRSTSEC], eax
+add EN_FIRSTSEC, 04
+mov RVA, eax
+add eax, DLL_PE
+mov VA, eax
+mov eax, edx
+exec
+MOV EAX,DWORD PTR DS:[EDI+EAX*4]
+ende
+add eax, DLL_PE
+inc counta
+inc edx
+mov EN_API, eax
+jmp NAME_CALC
+////////////////////
+NAME_CALC:
+gstr EN_API
+mov EN_API, $RESULT
+eval "RVA: {RVA} | VA: {VA} | Func: {EN_API}"
+log $RESULT, ""
+eval "RVA: {RVA} | VA: {VA} | Func: {EN_API}"
+wrta sFile, $RESULT
+eval "cmt {VA},"{EN_API}""
+wrta sFile1, $RESULT
+eval "bp {VA}"
+wrta sFile1, $RESULT
+lbl VA, EN_API
+cmt VA, EN_API
+cmp edx, ebx
+je DLL_END_READ
+jmp START_READ_EXPORTS
+////////////////////
+DLL_END_READ:
+popa
+log "----------------------------------------------------------------------"
+log ""
+log ""
+ret
+////////////////////
+NO_EXPORTS_FOUND:
+popa
+log "Found no exports in Enigma Loader!"
+ret
+////////////////////
+READ_NEW_OEP_FREE_LOCATION:
+alloc 1000
+mov READ_BYTE_SEC, $RESULT
+readstr [READ_BYTE_SEC], OEPEND
+mov FREE_SPACE, $RESULT
+buf FREE_SPACE
+find OEPJMP, FREE_SPACE
+cmp $RESULT, 00
+je NOT_ENOUGH_FREE_SPCAE_FOUND
+mov NEW_OEP, $RESULT
+add NEW_OEP, 10
+find NEW_OEP, FREE_SPACE
+cmp $RESULT, 00
+je NOT_ENOUGH_FREE_SPCAE_FOUND
+mov NEW_OEP, $RESULT
+mov OEPJMP, NEW_OEP
+ret
+////////////////////
+NOT_ENOUGH_FREE_SPCAE_FOUND:
+log "No new free space for OEP found!"
+ret
+////////////////////
+PATCH_HWID_SILENCE:
+cmp PATCH_HWID_SILENCE, 01
+jne HWID_DISABLED_BY_USER
+cmp HWID_DIRECT_FOUND, 01
+jne NO_SILENCE_PATCH
+mov [HWID_CHECK_IN], 01
+mov E_REGSHEME_PATCH, 00
+mov E_REGSHEME_PATCH, "Yes"
+call SET_HWID_WRITE
+ret
+////////////////////
+NO_SILENCE_PATCH:
+ret
+////////////////////
+HWID_DISABLED_BY_USER:
+ret
+////////////////////
+SET_HWID_WRITE:
+bphws HWID_CHECK_IN, "w"
+ret
+////////////////////
+SCAN_DUMP_OVERLAY:
+gpi EXEFILENAME
+mov EXEFILENAME, $RESULT
+gpi CURRENTDIR
+mov CURRENTDIR, $RESULT
+len CURRENTDIR
+mov CURRENTDIR_COUNT, $RESULT
+alloc 4000
+mov OVERSEC, $RESULT
+mov OVERSEC_2, $RESULT+1000
+alloc 10000
+mov LAYER, $RESULT
+mov [OVERSEC], EXEFILENAME
+mov [OVERSEC_2],
+#60BFAAAAAAAA8BEF81C5000700006A006A006A036A006A0168000000808BC750E8859A6CAA8BD883FB
+FF0F84AA0100008987000500006A0053E86C9A6CAA8BF06A006A006A036A006A0168000000808BC750E
+8539A6CAA8BD883FBFF0F846D0100008987040500006A006A006A0053E8369A6CAA6A008D45F8506A40
+8D45B85053E8249A6CAA837DF8400F853F0100006A006A008B45F45053E80C9A6CAA6A008D45F85068F
+80000008D85C0FEFFFF5053E8F4996CAA817DF8F80000000F850C0100006A006A008B45F405F8000000
+0FB795C6FEFFFF4AC1E2038D149203C25053E8C4996CAA6A008D45F8506A288D8598FEFFFF5053E8AF9
+96CAA8B85ACFEFFFF0385A8FEFFFF89870805000089B70C0500003BF00F84B40000006A006A005053E8
+84996CAA8B870C0500002B8708050000898710050000B8BBBBBB0B8945EC6A008D45F450FFB71005000
+08B45EC5053E854996CAA53E84E996CAA6A006A006A026A006A026800000040803F000F840600000047
+E9F1FFFFFFC7072E4F5652BFAAAAAAAA57E81F996CAA8BD883FBFF0F84390000008987140500006A006
+A006A0053E802996CAA6A008D45F0508B8710050000508B45EC5053E8EB986CAA53E8E5986CAAC78718
+05000001000000FFB704050000E8D0986CAAFFB700050000E8C5986CAA6190909090#
+mov [OVERSEC_2+02], OVERSEC
+mov [OVERSEC_2+139], LAYER
+mov [OVERSEC_2+181], OVERSEC
+eval "call {CreateFileA}"
+asm OVERSEC_2+20, $RESULT
+eval "call {GetFileSize}"
+asm OVERSEC_2+39, $RESULT
+eval "call {CreateFileA}"
+asm OVERSEC_2+52, $RESULT
+eval "call {SetFilePointer}"
+asm OVERSEC_2+6F, $RESULT
+eval "call {ReadFile}"
+asm OVERSEC_2+81, $RESULT
+eval "call {SetFilePointer}"
+asm OVERSEC_2+99, $RESULT
+eval "call {ReadFile}"
+asm OVERSEC_2+0B1, $RESULT
+eval "call {SetFilePointer}"
+asm OVERSEC_2+0E1, $RESULT
+eval "call {ReadFile}"
+asm OVERSEC_2+0F6, $RESULT
+eval "call {SetFilePointer}"
+asm OVERSEC_2+121, $RESULT
+eval "call {ReadFile}"
+asm OVERSEC_2+151, $RESULT
+eval "call {CloseHandle}"
+asm OVERSEC_2+157, $RESULT
+eval "call {CreateFileA}"
+asm OVERSEC_2+186, $RESULT
+eval "call {SetFilePointer}"
+asm OVERSEC_2+1A3, $RESULT
+eval "call {WriteFile}"
+asm OVERSEC_2+1BA, $RESULT
+eval "call {CloseHandle}"
+asm OVERSEC_2+1C0, $RESULT
+eval "call {CloseHandle}"
+asm OVERSEC_2+1D5, $RESULT
+eval "call {CloseHandle}"
+asm OVERSEC_2+1E0, $RESULT
+mov EIP_BAK, eip
+mov eip, OVERSEC_2
+mov [OVERSEC_2+1E5], #9057E8BE986CAA6190#
+eval "call {DeleteFileA}"
+asm OVERSEC_2+1E7, $RESULT
+bp OVERSEC_2+1ED
+run
+bc
+mov TARGET_SIZE,    [OVERSEC+508]
+mov TARGET_SIZE_2,  [OVERSEC+50C]
+mov OVERLAY_SIZE,   [OVERSEC+510]
+mov OVERLAY_DUMPED, [OVERSEC+518]
+itoa OVERLAY_SIZE, 10.
+mov OVERLAY_SIZE_DEC, $RESULT
+pusha
+mov eax, OVERSEC
+add eax, CURRENTDIR_COUNT
+gstr eax
+mov OVERLAY_NAME, $RESULT
+popa
+mov OVERLAY_SCAN, "Yes"
+mov OVERDUMP, 01
+cmp OVERLAY_DUMPED, 01
+je OVERLAY_LOG
+mov OVERDUMP, 00
+mov OVERLAY_NAME, 00
+mov OVERLAY_DUMPED, "No Overlay Found!"
+mov OVERLAY_SCAN, "No"
+////////////////////
+OVERLAY_LOG:
+log ""
+log "---------- OVERLAY ---------------"
+log ""
+eval "Overlay Found: {OVERLAY_DUMPED}"
+log $RESULT, ""
+eval "Overlay NAME : {OVERLAY_NAME}"
+log $RESULT, ""
+eval "Overlay SIZE : {OVERLAY_SIZE} Hex"
+log $RESULT, ""
+eval "Overlay SIZE : {OVERLAY_SIZE_DEC} Dec"
+log $RESULT, ""
+log "----------------------------------"
+log ""
+cmp OVERDUMP, 01
+jne OVER_EXIT
+fill OVERSEC, 4000, 00
+mov [OVERSEC], EXEFILENAME
+eval "{EXEFILENAME}.OVR"
+mov [OVERSEC+2000], $RESULT
+alloc 2000
+mov DPSEC, $RESULT
+mov [DPSEC+1000], TITAN
+mov [DPSEC],
+#60B800000000BEAAAAAAAABFAAAAAAAA68AAAAAAAAE890AAFDA909C0741A57568BC88BE833C081C120
+940000FFD109C07403EB079061EB0361909055E869AAFDA909C074F661909090#
+mov [DPSEC+07], OVERSEC
+mov [DPSEC+0C], OVERSEC+2000
+mov [DPSEC+11], DPSEC+1000
+eval "call {LoadLibraryA}"
+asm DPSEC+15, $RESULT
+eval "call {FreeLibrary}"
+asm DPSEC+3C, $RESULT
+bp DPSEC+39
+bp DPSEC+36
+bp DPSEC+46
+mov eip, DPSEC
+run
+cmp eip, DPSEC+46
+je ALL_VERY_FINE
+cmp eip, DPSEC+36
+je NO_OVR_DUMPED
+////////////////////
+DLL_WAS_NOT_LOADED:
+log ""
+log "Titan was not loaded!"
+log "Use a other overlay extract tool later!"
+log ""
+msg "Titan was not loaded! \r\n\r\nUse a other overlay extract tool later! \r\n\r\
+nLCF-AT"
+bc
+jmp ALL_VERY_FINE
+////////////////////
+NO_OVR_DUMPED:
+log ""
+log "Overlay was not dumped correctly!"
+log "Use a other overlay extract tool later!"
+log ""
+msg "Overlay was not dumped correctly! \r\n\r\nUse a other overlay extract tool
+later! \r\n\r\nLCF-AT"
+bc eip
+run
+bc
+jmp ALL_VERY_FINE
+////////////////////
+ALL_VERY_FINE:
+bc
+mov eip, EIP_BAK
+free DPSEC
+////////////////////
+OVER_EXIT:
+mov eip, EIP_BAK
+free OVERSEC
+free LAYER
+ret
+////////////////////
+E_STRING_FIND:
+pusha
+mov eax, 00
+find NAME, #454E49474D41#
+cmp $RESULT, 00
+je NO_E_NAME_FOUND
+mov E_STRING_1, $RESULT
+mov eax, $RESULT
+add eax, 06
+find eax, #454E49474D41#
+cmp $RESULT, 00
+je NO_E_SECOND_STRING_FOUND
+mov E_STRING_2, $RESULT
+mov $RESULT, E_STRING_2
+mov E_STRING_1, E_STRING_2
+popa
+ret
+////////////////////
+NO_E_SECOND_STRING_FOUND:
+popa
+mov $RESULT, E_STRING_1
+ret
+////////////////////
+NO_E_NAME_FOUND:
+popa
+ret
+////////////////////
+GET_JMP_DEST:
+cmp tmp, CODESECTION
+jb NOT_RIGHT
+cmp tmp, IMAGESIZE
+ja NOT_RIGHT
+mov edi, 01
+ret
+////////////////////
+NOT_RIGHT:
+mov edi, 00
+ret
+////////////////////
+DUMP_FIRST_DLL_FILE:
+alloc 1000
+mov DUMPSEC, $RESULT
+mov [DUMPSEC],
+#60546A40680010000068AAAAAAAAE897AA0CAAB8AAAAAAAA33D2668B50068BF081C600010000B90800
+00008BFE83C708F2A4664A6683FA00740583C620EBE76190909090#
+mov [DUMPSEC+0A], ENIGMASEC
+eval "call {VirtualProtect}"
+asm DUMPSEC+0E, $RESULT
+mov EN_PE_TEMP, ENIGMASEC+[ENIGMASEC+3C]
+mov EN_IMAGE, [EN_PE_TEMP+50]
+mov [DUMPSEC+14], EN_PE_TEMP
+bp DUMPSEC+40
+mov tmp, eip
+mov eip, DUMPSEC
+run
+bc
+mov eip, tmp
+free DUMPSEC
+eval "{DLL_NAME}"
+dm ENIGMASEC, EN_IMAGE, $RESULT
+ret
+////////////////////
+ESP_READ:
+gmemi esp, MEMORYBASE
+mov ESP_BASE, $RESULT
+gmemi ESP_BASE, MEMORYSIZE
+mov ESP_SIZE, $RESULT
+readstr [ESP_BASE], ESP_SIZE
+mov ESP_IN, $RESULT
+buf ESP_IN
+ret
+////////////////////
+ESP_WRITE:
+mov [ESP_BASE], ESP_IN
+ret
+////////////////////
+DLL_PE_BAK:
+readstr [ENIGMASEC], 1000
+mov EN_PE_BAK, $RESULT
+buf EN_PE_BAK
+ret
+////////////////////
+DLL_PE_BAK_WRITE:
+mov [ENIGMASEC], EN_PE_BAK
+ret
+////////////////////
+READ_REGISTER:
+mov A_1, eax
+mov A_2, ecx
+mov A_3, edx
+mov A_4, ebx
+mov A_5, ebp
+mov A_6, esi
+mov A_7, edi
+ret
+////////////////////
+WRITE_REGISTER:
+mov eax, A_1
+mov ecx, A_2
+mov edx, A_3
+mov ebx, A_4
+mov ebp, A_5
+mov esi, A_6
+mov edi, A_7
+ret
+////////////////////
+VARS:
+var SHELL_SEC
+var EXTRA_1
+var EXTRA_2
+var EXTRA_3
+var EXTRA_4
+var AFTER_OEP_SCAN
+var ShellExecuteA
+var FIX_TOOL
+var THREE_VERSION
+var ENTERED
+var REG_OVER
+var FOUNDER
+var F_SEC
+var F_COUNT
+var F_SIGN
+var F_ADD
+var VM_1
+var VM_2
+var E_STAMP
+var TLS_WRONG_POINTER
+var VM_OUT_FOUND
+var IATSTART
+var IATEND
+var IATSIZE
+var IATLOG
+var REG_STOP
+var VP_SEC
+var VP_SEC_2
+var NEW_OEP
+var ADDR
+var addr
+var temp
+var stop
+var HWID
+var jump
+var first
+var store
+var API
+var API2
+var IN_BASE
+var VMOEP
+var CHECK
+var JTABLE_IN
+var PATCHSEC
+var PATCHSEC_2
+var JTABLE
+var LOOP
+var ret
+var IAT
+var NOT_FIXABLE_VM_FOUND
+var A
+var B
+var EN_EMU
+var REG1
+var REG2
+var REG1_COM
+var REG2_COM
+var bak
+var pointer
+var pointerin
+var VirtualProtect
+var NEW_VM
+var PROCESSID
+var PROCESSNAME
+var PROCESSNAME_COUNT
+var PROCESSNAME_FREE_SPACE
+var PROCESSNAME_FREE_SPACE_2
+var EIP_STORE
+var MODULEBASE
+var PE_HEADER
+var CURRENTDIR
+var PE_HEADER_SIZE
+var CODESECTION
+var CODESECTION_SIZE
+var MODULESIZE
+var MODULEBASE_and_MODULESIZE
+var PE_SIGNATURE
+var PE_SIZE
+var PE_INFO_START
+var ENTRYPOINT
+var BASE_OF_CODE
+var IMAGEBASE
+var SIZE_OF_IMAGE
+var TLS_TABLE_ADDRESS
+var TLS_TABLE_SIZE
+var IMPORT_ADDRESS_TABLE
+var IMPORT_ADDRESS_SIZE
+var VM_ROUTINE_START
+var SECTIONS
+var SECTION_01
+var SECTION_01_NAME
+var MAJORLINKERVERSION
+var MINORLINKERVERSION
+var PROGRAMLANGUAGE
+var IMPORT_TABLE_ADDRESS
+var IMPORT_TABLE_ADDRESS_END
+var IMPORT_TABLE_ADDRESS_CALC
+var IMPORT_TABLE_SIZE
+var IAT_BEGIN
+var IMPORT_ADDRESS_TABLE_END
+var API_IN
+var API_NAME
+var MODULE
+var IMPORT_FUNCTIONS
+var IATSTORE_SECTION
+var IATSTORE
+var GetStartupInfoA
+var GetProcAddress
+var GetVersionExA
+var GetDriveTypeA
+var CreateMutexA
+var LoadLibraryA
+var FreeLibrary
+var ZwQuerySystemInformation
+var ExitProcess
+var NEW_EX_MAKED
+var DV_DLL
+var TITAN
+var ZERO
+var ENIGMASEC
+var ENIGMASEC_BAK
+var LASTSEC
+var NAME
+var MY
+var SCRIPTNAME
+var LINES
+var LONG
+var L1
+var L2
+var V1
+var version
+var VM_IN
+var VM_OUT
+var COUNT
+var SETNE_IN
+var IAT_P
+var CreateFileA
+var CHECK_LOOPING
+var EnumWindows
+var VirtualFree
+var GetFileSize
+var SetFilePointer
+var ReadFile
+var CloseHandle
+var WriteFile
+var EXEFILENAME
+var CURRENTDIR_COUNT
+var OVERSEC
+var OVERSEC_2
+var LAYER
+var VirtualProtect_RET
+var TARGET_SIZE
+var TARGET_SIZE_2
+var OVERLAY_SIZE
+var OVERLAY_DUMPED
+var OVERLAY_NAME
+var EIP_BAK
+var EXIT_BAK
+var WinExec
+var EXTRA_FILES
+var WRITTEN_DATA
+var READ_DLL_LOADER
+var EIP_IN
+var MAIN_DATA_SEC
+var OPCODE_SEC
+var PATCHING_SEC
+var GetStartupInfoW
+var STACK_SECTION
+var GETSTARTUPINFO_PATCH
+var PATCHING_SEC_2
+var MEMBLOCK
+var AL_REG
+var EN_FILES
+var DISASM
+var TDISASM
+var OVERLAY_SCAN
+var LOADER_DUMPED
+var ENIGMA_VERSION_SCAN
+var PROTECTED_AT
+var WATERMARK_SCAN
+var REGSHEME_SCAN
+var VERSION_TYPE
+var E_INTERN_VM
+var E_INTERN_VM_FIXED
+var SPECIAL_E_ANTI
+var E_REGSHEME_PATCH
+var E_OUTER_VM
+var E_STOLEN_FOUND
+var E_STOLEN_FIXED
+var E_OEP_MOVE
+var E_OLD_VM_SIGN
+var E_VB_APP
+var E_EXTRA_FILES
+var E_SDK_USED
+var E_LOADER_SDK
+var E_TLS_FOUND
+var E_FILE_DUMPED
+var E_OUTER_VM_FIXED
+var E_OUTER_USED
+var LINES2
+var DeleteFileA
+var E_HWID_SCAN
+var E_HWID_PATCHED
+var TRY_OLD_UNPACK
+var PATCH_HWID_SILENCE
+var CHANGE_HWID
+var BYPASS_REGSHEME
+var FIX_OUTER_VM_INSIDE
+var PROCESSNAME_2
+var APP_BASE
+var IT_BASE
+var MEMORYBASE
+var IT_SEC
+var IT_BASE_SIZE
+var S_BASE
+var STOP_A
+var RE_START
+var RE_SIZE
+var EP
+var IMAGE
+var EP_CHECK
+var DLL_EP
+var DLL_EP_RVA
+var RELOC_SEC
+var DUMPSEC
+var PE_TEMP
+var ENIGMASEC_SIZE
+var tmp
+var DLL_NAME
+var E_STRING_1
+var SAVE
+var E_SEC
+var E_MIN
+var E_HOUR
+var E_YEAR
+var E_MONTH
+var E_DAY
+var E_LIC
+var E_TYPE
+var E_NAME
+var E_TEXT
+var E_FILE
+var E_SIZE
+var EAXA
+var VM_OUT_A
+var VM_INT
+var BAK
+var line
+var OLDER_VM_USED
+var ED
+var CMPS
+var CMPS_2
+var MJ_1_A
+var MJ_2_A
+var jump_A
+var ret_A
+var MJ_1
+var MJ_2
+var E_IAT_TABLE
+var E_IAT_START
+var API_COUNT
+var E_REDI
+var E_U_BASE
+var E_REDI_2
+var E_U_BASE_2
+var E_REDISEC
+var E_COM_BAK
+var E_VM1
+var E_VM1_BAK
+var E_VM2
+var E_VM2_BAK
+var VMOEPBAK
+var tmp2
+var MAK_LOW
+var OEP_STORE
+var ENIGMA_OEP
+var OEP
+var TEST_R32
+var RD
+var RET
+var RD_R
+var EN_EMU_STOP
+var HWID_A
+var HWID_CHECK
+var HWID_DIRECT_FOUND
+var HWID_CHECK_IN
+var USER_HWID
+var USER_HWID_COUNT
+var OLD_HWID_COUNT
+var FUNC_COUNT
+var IATRVA
+var HWID_SEC_A
+var JMPCOUNTER
+var TT
+var JMP
+var ORG
+var NEWSEC
+var APISEC
+var TESTOEP
+var IMAGESIZE
+var JMPSECS
+var JMPSECS_2
+var JMPSIZE
+var DEST_CHECK
+var OEPEND
+var OEPJMP
+var OEPJMP_2
+var OEPBYTES
+var VMTEST
+var SRTSEC
+var PATH_DLL_SEC
+var OEP_MEM
+var EXTENSION
+var EN_DLL_BAK
+var ENIGMASEC_SIZE_BAK
+var ENIGMA_BASE
+var ENIGMA_BASE_2
+var SEC_VM
+var SEC_VM_SIZE
+var bak2
+var tamp
+var DLL_NAMES
+var DLL_WHAT
+var API_WHAT
+var IMAGESIZE_DIRECT
+var EN_BASE
+var EN_SIZE
+var EXTRA_FILES_SEC
+var EXTRA_FILES_SEC_2
+var EXTRA_NAME_SEC
+var EXTRA_NAME_SEC_2
+var EN_DLL_NAME
+var EN_FIRSTSEC_2
+var EN_FIRSTSEC
+var tapa
+var ONE_BASE
+var EX_NAME
+var GETEX
+var OVERLAY_SIZE_DEC
+var OVERDUMP
+var STORE_CODE_SEC
+var WRITE_IT
+var sFile2
+var ROUNDA
+var encapi
+var relociat
+var number
+var patchaddr
+var fixiatok
+var newaddr
+var magicaddr
+var patchreloc
+var magicpatchaddr
+var magicpatch
+var save1
+var save2
+var save3
+var baseaddr
+var allocaddr
+var mover
+var tagaddr
+var jmpoep
+var LOG_RVAS
+var LOG_RVAS_2
+var LOG_RVAS_3
+var DLL_IMAGE
+var EXPORT
+var counta
+var EXP
+var RVA
+var VA
+var DLL_PE
+var EN_API
+var LOADED_EXTRA
+var FILENAME
+var FILENAME_LEN
+var FOLDER
+var FOLDERLEN
+var EXTENSIONSEC
+var CODEBAK
+var APICOMMAND
+var APIADDRESS
+var IATLOCATION
+var IATSEC
+var READ_BYTE_SEC
+var FREE_SPACE
+var DPSEC
+var E_STRING_2
+var EN_PE_TEMP
+var EN_IMAGE
+var ESP_BASE
+var ESP_SIZE
+var ESP_IN
+var EN_PE_BAK
+var A_1
+var A_2
+var A_3
+var A_4
+var A_5
+var A_6
+var A_7
+var GSIA_SEC
+var PE_EN
+var ESP_ADDR
+var PUSH_AD
+var PUSH_RET
+var stop2
+var RS_COMMANDS
+var COPY_COMMANDS
+var OFFSETCALL
+var WRITECALL
+var OFFSETCALL_DES
+var OFFSETCALL_BACK
+var WRITECALL_DES
+var WRITECALL_BACK
+var STORE_SEC
+var STORE_SEC_2
+var ADDR_SEC
+var ADDR_SEC_2
+var GET_JMP_SEC
+var GET_JMP_SEC_2
+var S_SEC
+var ADDR_INC
+var CHECKUP
+var sFile
+var VM_LOG_SEC
+var VM_LOG_SEC_2
+var VM_PATTERNSEC
+var VM_PATTERNSEC_2
+var size
+var in
+var SPECIAL_ANTI
+var READ_VM_DATA
+var VM_STRUCT_POINTER
+var VM_INTO_START
+var STOLEN_VM_BYTES
+var VM_ADDR
+var VM_COMMAND_LENGHT
+var VM_COMMAND
+var FIRST_VM_PUSH_AT
+var E_FIRST_COM
+var E_VM1_OUT
+var E_VM2_OUT
+var E_POINTER_VM
+var E_VM1_SEC
+var cb
+var cs
+var loaderbase
+var enigma_api
+var offaddr
+var obfuscation
+var SPACE
+var EXTRA_DLL_P
+var EXTRA_DLL_P_2
+var FILE_ADDR
+var FILE_SIZE
+var DLL_NAMES
+var RADOMSEC
+var DUMP_THIS
+var IS_CREATED
+var NOTESEC
+var NOTESEC_2
+var NOTESEC_NAME
+var NOTESEC_NAME_2
+var WRITTEN_DATA_A
+var POP
+var L_RD
+var LA_SEC
+var L_RD_BAK
+var WINEX_BAK
+//////////////////////////////////////////
+mov NOT_FIXABLE_VM_FOUND, "No"
+mov E_HWID_SCAN, "Disabled"
+mov E_HWID_PATCHED, "No"
+mov E_FILE_DUMPED, "No"
+mov E_SDK_USED, "No"
+mov ENIGMA_VERSION_SCAN, "UNKNWON"
+mov SPECIAL_E_ANTI, "No"
+mov E_REGSHEME_PATCH, "No"
+mov E_OEP_MOVE, "Not Needed"
+mov E_OUTER_VM_FIXED, "Not Needed"
+mov E_VB_APP, "No"
+mov E_OLD_VM_SIGN, "No"
+mov E_OUTER_USED, "No"
+mov E_INTERN_VM, "No"
+mov E_INTERN_VM_FIXED, "No"
+mov E_OUTER_VM, "No"
+mov LINES, "********************"
+mov LINES2, "===================="
+mov MY, "LCF-AT"
+mov SCRIPTNAME, "Enigma 1.x - 3.x VM Unpacker 1.0"
+mov LONG, "-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+"
+mov L1, "\r\n\r\n"
+mov L2, "\r\n"
+mov SPACE, "                              "
+call USER_SETTING
+gpa "ShellExecuteA",           "SHELL32.dll"
+mov  ShellExecuteA,             $RESULT
+gpa "ExitProcess",             "kernel32.dll"
+mov  ExitProcess,               $RESULT
+readstr [ExitProcess], 05
+mov EXIT_BAK, $RESULT
+buf EXIT_BAK
+gpa "DeleteFileA",             "kernel32.dll"
+mov  DeleteFileA,               $RESULT
+gpa "FreeLibrary",             "kernel32.dll"
+mov  FreeLibrary,               $RESULT
+gpa "CreateFileA",             "kernel32.dll"
+mov  CreateFileA,               $RESULT
+gpa "GetFileSize",             "kernel32.dll"
+mov  GetFileSize,               $RESULT
+gpa "SetFilePointer",          "kernel32.dll"
+mov  SetFilePointer,            $RESULT
+gpa "ReadFile",                "kernel32.dll"
+mov  ReadFile,                  $RESULT
+gpa "CloseHandle",             "kernel32.dll"
+mov  CloseHandle,               $RESULT
+gpa "WriteFile",               "kernel32.dll"
+mov  WriteFile,                 $RESULT
+gpa "GetStartupInfoA",         "kernel32.dll"
+mov  GetStartupInfoA,           $RESULT
+gpa "GetProcAddress",           "kernel32.dll"
+mov  GetProcAddress,            $RESULT
+gpa "GetVersionExA",            "kernel32.dll"
+mov  GetVersionExA,             $RESULT
+gpa "GetDriveTypeA",            "kernel32.dll"
+mov  GetDriveTypeA,             $RESULT
+gpa "CreateMutexA",             "kernel32.dll"
+mov  CreateMutexA,              $RESULT
+gpa "LoadLibraryA",             "kernel32.dll"
+mov  LoadLibraryA,              $RESULT
+gpa "VirtualProtect",          "kernel32.dll"
+mov  VirtualProtect,            $RESULT
+gpa "VirtualFree",             "kernel32.dll"
+mov VirtualFree,                $RESULT
+gpa "GetProcAddress",          "kernel32.dll"
+mov  GetProcAddress,            $RESULT
+gpa "GetStartupInfoA",         "kernel32.dll"
+mov  GetStartupInfoA,           $RESULT
+gpa "GetStartupInfoW",         "kernel32.dll"
+mov  GetStartupInfoW,           $RESULT
+find VirtualProtect, #C21000#
+mov VirtualProtect_RET, $RESULT
+gpa "EnumWindows",             "user32.dll"
+mov  EnumWindows,               $RESULT
+mov [EnumWindows], #33C0C20800#
+gpa "ZwQuerySystemInformation","ntdll.dll"
+mov  ZwQuerySystemInformation,  $RESULT
+gpa "WinExec",                 "kernel32.dll"
+mov  WinExec,                   $RESULT
+cmp WinExec, 00
+je NO_WinExec_FOUND
+readstr [WinExec], 10
+mov WINEX_BAK, $RESULT
+buf WINEX_BAK
+mov [WinExec], #33C0C20800#
+////////////////////
+NO_WinExec_FOUND:
+mov VM_IN,  "InnerDevirtualize"
+mov VM_OUT, "OuterDevirtualize"
+cmp GETSTARTUPINFO_PATCH, 01
+jne NO_GETSTARTUPINFO_PATCH
+pusha
+mov eax, 00
+mov ecx, 00
+mov esi, 00
+mov eax, GetStartupInfoA
+mov ecx, GetStartupInfoW
+cmp eax, 00
+je NO_GSIA_USED
+alloc 1000
+mov GSIA_SEC, $RESULT
+fill GSIA_SEC, 1000, 90
+mov edx, $RESULT
+mov [GSIA_SEC+30],
+#60BFAAAAAA0A8B0F8B570489118B5708895104368B470CC7401000000000C7401400000000C7401800
+000000C7401C00000000C7402000000000C7402400000000C7402800000000894C24A061FF642480909
+0#
+mov [GSIA_SEC+32], GSIA_SEC
+mov [GSIA_SEC+0C0],
+#608B4C2420BFAAAAAAAA8B74242489770C890F8B1189570483C104BA000000008B1189570883C7108B
+4C2420576A406A0851E8B3A96DAA8B4C2420C601E983EF1083C7308BD183C1058BF72BF9897A0161909
+0#
+mov [GSIA_SEC+0C0+06], GSIA_SEC
+eval "Call {VirtualProtect}"
+asm GSIA_SEC+0F2, $RESULT
+mov [GSIA_SEC+300],
+#608B4C2420BFAAAAAAAA8B74242489770C890F8B1189570483C104BA000000008B1189570883C7108B
+4C2420576A406A0851E8B3A96DAA8B4C2420C601E983EF1083C7308BD183C1058BF72BF9897A0161909
+0#
+mov [GSIA_SEC+300+06], GSIA_SEC
+eval "Call {VirtualProtect}"
+asm GSIA_SEC+332, $RESULT
+////////////////////
+GET_OP_SIZE_GSIA:
+gci eax, SIZE
+add esi, $RESULT
+add eax, $RESULT
+cmp esi, 05
+jb GET_OP_SIZE_GSIA
+readstr [GetStartupInfoA], esi
+buf $RESULT
+mov [GSIA_SEC+111], $RESULT
+mov ebx, GSIA_SEC+111+esi
+eval "jmp {eax}"
+asm ebx, $RESULT
+mov ebx, GSIA_SEC+0C0
+eval "jmp {ebx}"
+asm GetStartupInfoA, $RESULT
+mov esi, 00
+////////////////////
+GET_OP_SIZE_GSIA_2:
+gci ecx, SIZE
+add esi, $RESULT
+add ecx, $RESULT
+cmp esi, 05
+jb GET_OP_SIZE_GSIA_2
+readstr [GetStartupInfoW], esi
+buf $RESULT
+mov [GSIA_SEC+351], $RESULT
+mov ebx, GSIA_SEC+351+esi
+eval "jmp {ecx}"
+asm ebx, $RESULT
+mov ebx, GSIA_SEC+300
+eval "jmp {ebx}"
+asm GetStartupInfoW, $RESULT
+////////////////////
+NO_GSIA_USED:
+popa
+////////////////////
+NO_GETSTARTUPINFO_PATCH:
+ret
+////////////////////
+FIND_EXTRA_FILES:
+find ENIGMASEC, #4633DB8D049B8B55F4#
+cmp $RESULT, 00
+je NO_EXTRA_FILES
+mov EN_FILES, $RESULT
+find EN_FILES, #E8????????434E75#
+cmp $RESULT, 00
+je NO_EXTRA_FILES
+mov EN_FILES, $RESULT+09
+bphws EN_FILES, "x"
+ret
+////////////////////
+LOG_EXTRA_DATA:
+mov EN_BASE, [esp-40]
+mov EN_SIZE, [esp-3C]
+gstr [esp+7C]
+mov EN_DLL_NAME, $RESULT
+pusha
+mov eax, EN_BASE
+mov ecx, [eax+3C]
+add ecx, eax
+mov PE_EN, ecx
+popa
+call DUMP_DLL
+call STO_LOOP
+esto
+cmp eip, EN_FILES
+je LOG_EXTRA_DATA
+ret
+////////////////////
+NO_EXTRA_FILES:
+ret
+////////////////////
+OLDER_VM_CHECKING:
+call CODESECTION_COPY
+mov ESP_ADDR, esp
+mov BAK, eip
+find ENIGMASEC, #9C60FF742424E8????????89442424619DC3#
+cmp $RESULT, 00
+jne FOUND_STOLEN_CODE
+find ENIGMASEC, #60??????????E8????????????????61C3#
+cmp $RESULT, 00
+je VM_OLD_NEXT
+mov PUSH_AD, $RESULT
+mov stop, $RESULT
+mov PUSH_RET, $RESULT+10
+mov stop2, $RESULT+10
+mov RS_COMMANDS, $RESULT+0B
+readstr [RS_COMMANDS], 06
+mov COPY_COMMANDS, $RESULT
+buf COPY_COMMANDS
+mov E_STOLEN_FOUND, 00
+mov E_STOLEN_FOUND, "Yes"
+find PUSH_AD, #B8E8030000E8#
+cmp $RESULT, 00
+jne FOUND_OFFSET_CALL
+log ""
+log "Found older stolen code sign but not with mov eax 3E8!"
+log ""
+find PUSH_AD, #B800100000E8#
+cmp $RESULT, 00
+je FOUND_NO_STOLEN_MARKER
+log ""
+log "Found older stolen code sign but not with mov eax 1000!"
+log "NOTE: Now comes a not testet fix!"
+log ""
+jmp FOUND_OFFSET_CALL
+////////////////////
+FOUND_NO_STOLEN_MARKER:
+log ""
+log "Found no stolen code marker!"
+log "The script does bypass fixing of stolen bytes!"
+log "If stolen bytes feature is not used then your file will run!"
+log "If not then send me your file for a update!"
+log ""
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Found no stolen code marker! {L1}The script
+does bypass fixing of stolen bytes! {L1}If stolen bytes feature is not used then
+your file will run! {L1}If not then send me your file for a update! \r\n\r\n{LINES}
+\r\n{MY}"
+msg $RESULT
+jmp VM_OLD_NEXT
+pause
+pause
+pause
+ret
+////////////////////
+FOUND_OFFSET_CALL:
+mov OFFSETCALL, $RESULT+05
+add OFFSETCALL, 05
+findop OFFSETCALL, #E8#
+mov WRITECALL, $RESULT
+sub OFFSETCALL, 05
+gci OFFSETCALL, DESTINATION
+mov OFFSETCALL_DES, $RESULT
+mov OFFSETCALL_BACK, OFFSETCALL+05
+gci WRITECALL, DESTINATION
+mov WRITECALL_DES, $RESULT
+mov WRITECALL_BACK, WRITECALL+05
+alloc 1000
+mov STORE_SEC, $RESULT
+mov STORE_SEC_2, $RESULT
+alloc 50000
+mov ADDR_SEC, $RESULT
+mov ADDR_SEC_2, $RESULT
+alloc 3000
+mov GET_JMP_SEC, $RESULT
+mov GET_JMP_SEC_2, $RESULT
+add GET_JMP_SEC, 500
+////////////////////
+ADD_BYTES_A:
+add STORE_CODE_SEC, 200000
+alloc STORE_CODE_SEC
+mov S_SEC, $RESULT
+cmp S_SEC, IMAGESIZE
+ja ALLOC_GOOD_A
+free S_SEC
+jmp ADD_BYTES_A
+////////////////////
+ALLOC_GOOD_A:
+mov [GET_JMP_SEC],
+#60BFAAAAAAAA8B078B4F048B57088B5F0CBE000000009090909090903BC174277725803868740340EB
+F2807805E975F78B680603E883C50583C5053BEB75E8890283C20446EBE061909090909090#
+mov [GET_JMP_SEC+02], GET_JMP_SEC_2
+mov [GET_JMP_SEC_2], CODESECTION
+mov [GET_JMP_SEC_2+04], CODESECTION+CODESECTION_SIZE-10
+mov [GET_JMP_SEC_2+08], ADDR_SEC
+mov [GET_JMP_SEC_2+0C], stop
+mov eip, GET_JMP_SEC
+bp GET_JMP_SEC+47
+run
+bc
+mov ADDR_INC, esi
+call STO_LOOP
+cmp ADDR_INC, 00
+je NOT_FOUND_HERE_A
+add STORE_SEC, 500
+mov [STORE_SEC_2], S_SEC
+mov [STORE_SEC],
+#60BEAAAAAAAABFBBBBBBBB9090909090908B2F83FD00740C896C248061FFA42460FFFFFF9090909090
+E87CA518A960BFAAAAAAAA8B3789742480618B8C2460FFFFFF8BC1E961A518A99090909090E857A518A
+960BFAAAAAAAA8B3703F0893761E945A518A990908944242061BCCCCCCCCCEB8D#
+mov [STORE_SEC+71], #60E800000000588340900461EB819090#
+mov [STORE_SEC+24], #61#
+mov [STORE_SEC+02], STORE_SEC_2
+mov [STORE_SEC+07], ADDR_SEC_2
+eval "call {OFFSETCALL_DES}"
+asm STORE_SEC+29, $RESULT
+mov [STORE_SEC+30], STORE_SEC_2
+eval "jmp {OFFSETCALL_BACK}"
+asm STORE_SEC+44, $RESULT
+eval "call {WRITECALL_DES}"
+asm STORE_SEC+4E, $RESULT
+mov [STORE_SEC+55], STORE_SEC_2
+eval "jmp {WRITECALL_BACK}"
+asm STORE_SEC+60, $RESULT
+mov [STORE_SEC+6D], ESP_ADDR
+bp STORE_SEC+25
+mov eip, STORE_SEC
+add STORE_SEC, 29
+eval "jmp {STORE_SEC}"
+asm OFFSETCALL, $RESULT
+sub STORE_SEC, 29
+add STORE_SEC, 4E
+eval "jmp {STORE_SEC}"
+asm WRITECALL, $RESULT
+sub STORE_SEC, 4E
+add STORE_SEC, 67
+eval "jmp {STORE_SEC}"
+asm RS_COMMANDS, $RESULT
+sub STORE_SEC, 67
+pusha
+run
+popa
+bc
+pusha
+mov eax, S_SEC
+mov ecx, [STORE_SEC_2]
+mov edx, S_SEC
+sub ecx, eax
+add ecx, 100
+mov edi, S_SEC
+sub edi, MODULEBASE
+eval "{PROCESSNAME_2} - Stolen_Code VA {S_SEC} - RVA {edi}.mem"
+dm eax, ecx, $RESULT
+eval "{PROCESSNAME_2} - Stolen_Code VA {S_SEC} - RVA {edi}.mem"
+log $RESULT, ""
+log "Older stolen code version was fixed into new section!"
+popa
+free STORE_SEC_2
+free GET_JMP_SEC_2
+free ADDR_SEC_2
+mov E_STOLEN_FIXED, 00
+mov E_STOLEN_FIXED, "Yes"
+mov eip, BAK
+ret
+jmp NOT_FOUND_HERE
+////////////////////
+NOT_FOUND_HERE:
+mov E_STOLEN_FIXED, 00
+mov E_STOLEN_FIXED, "Nothing to Fix"
+mov eip, BAK
+ret
+////////////////////
+NOT_FOUND_HERE_A:
+mov eip, BAK
+free STORE_SEC_2
+free GET_JMP_SEC_2
+free ADDR_SEC_2
+free S_SEC
+mov E_STOLEN_FIXED, 00
+mov E_STOLEN_FIXED, "Nothing to Fix"
+ret
+////////////////////
+FOUND_STOLEN_CODE:
+mov PUSH_AD, $RESULT
+mov stop, $RESULT
+mov PUSH_RET, $RESULT+11
+mov stop2, $RESULT+11
+mov E_STOLEN_FOUND, 00
+mov E_STOLEN_FOUND, "Yes"
+find stop2, #E8????????84C00F84????????8B??????????8B3F#
+cmp $RESULT, 00
+jne FOUND_CHECKUPER
+find stop2, #E8????????84C00F84????????A1????????8B??8B????????04#
+cmp $RESULT, 00
+jne FOUND_CHECKUPER
+jmp WRITE_TXT
+////////////////////
+FOUND_CHECKUPER:
+mov CHECKUP, $RESULT
+gci CHECKUP, DESTINATION
+mov CHECKUP, $RESULT
+mov [CHECKUP], #B801000000C3#
+log "CHECKUP was found and patched!"
+////////////////////
+WRITE_TXT:
+eval "{PROCESSNAME_2}_VM_Session_FIX_Script.txt"
+mov sFile2, $RESULT
+jmp NO_WRITING
+////////////////////
+YES_WRITING:
+cmp WRITE_IT, 01
+je RET_WRITE_IT
+wrt sFile2, " "
+mov WRITE_IT, 01
+////////////////////
+RET_WRITE_IT:
+ret
+////////////////////
+NO_WRITING:
+alloc 10000
+mov VM_LOG_SEC, $RESULT
+mov VM_LOG_SEC_2, $RESULT
+alloc 11000
+mov VM_PATTERNSEC, $RESULT
+mov VM_PATTERNSEC_2, $RESULT
+////////////////////
+SUCH:
+find CODEBAK, #68????????E9#
+cmp $RESULT, 00
+je NO_MORE_OLD_VM_JUMP
+mov A, $RESULT
+mov CODEBAK, $RESULT
+add CODEBAK, 5
+mov eip, $RESULT
+add eip, 5
+gci eip, DESTINATION
+cmp $RESULT, stop
+jne SUCH
+call YES_WRITING
+sub eip, 5
+bp stop2
+bp VirtualProtect_RET
+run
+cmp eip, VirtualProtect_RET
+jne T1_VM
+cmp ROUNDA, 01
+je SEF1
+mov addr, [esp+4]
+mov size, [esp+8]
+mov [VM_LOG_SEC],    addr
+mov [VM_LOG_SEC+04], size
+add VM_LOG_SEC, 08
+////////////////////
+SEF1:
+bc VirtualProtect_RET
+run
+cmp ROUNDA, 01
+je SET_ROUNDER
+readstr [addr], size
+mov store, $RESULT
+buf store
+mov [VM_PATTERNSEC], store
+add VM_PATTERNSEC, size
+log "//---"
+log ""
+eval "mov [{addr}], {store}"
+log $RESULT, ""
+eval "mov [{addr}], {store}"
+wrta sFile2, $RESULT
+wrta sFile2, ""
+mov ROUNDA, 01
+////////////////////
+T1_VM:
+call STO_LOOP
+cmp eip, stop2
+je T1_VM
+mov B, eip
+cmp [eip], 68, 01
+je 1_VM
+////////////////////
+1_VM:
+cmp [eip+05], E9, 01
+je 2_VM
+////////////////////
+2_VM:
+fill A, 5, 90
+eval "jmp {B}"
+asm A, $RESULT
+readstr [A], 5
+mov in, $RESULT
+buf in
+eval "mov [{A}], {in}"
+log $RESULT, ""
+eval "mov [{A}], {in}"
+wrta sFile2, $RESULT
+wrta sFile2, ""
+jmp SUCH
+////////////////////
+SET_ROUNDER:
+mov ROUNDA, 00
+jmp T1_VM
+////////////////////
+NO_MORE_OLD_VM_JUMP:
+cmp VM_LOG_SEC_2, VM_LOG_SEC
+je NO_CODE_TO_RESTORE
+pusha
+mov eax, VM_LOG_SEC_2
+mov ebx, VM_LOG_SEC
+mov esi, VM_PATTERNSEC_2
+////////////////////
+RESTORE_CODE:
+cmp eax, ebx
+je RESTORE_END
+mov edi, [eax]
+mov ecx, [eax+04]
+exec
+REP MOVS BYTE PTR ES:[EDI],BYTE PTR DS:[ESI]
+ende
+add eax, 08
+jmp RESTORE_CODE
+////////////////////
+RESTORE_END:
+popa
+mov E_STOLEN_FIXED, 00
+mov E_STOLEN_FIXED, "Yes"
+log ""
+log "Stolen Code was fixed!"
+log ""
+mov eip, BAK
+free VM_PATTERNSEC_2
+free VM_LOG_SEC
+ret
+////////////////////
+NO_CODE_TO_RESTORE:
+mov eip, BAK
+free VM_PATTERNSEC_2
+free VM_LOG_SEC
+log ""
+log "Stolen Code nothing to fix!"
+log ""
+mov E_STOLEN_FIXED, 00
+mov E_STOLEN_FIXED, "Nothing to Fix"
+ret
+pause
+pause
+////////////////////
+VM_OLD_NEXT:
+ret
+pause
+pause
+////////////////////
+SPECIAL_ANTI_DEBUG:
+pusha
+mov eax, 00
+mov ecx, 00
+mov eax, ENIGMASEC
+mov ecx, IN_BASE
+cmp eax, ecx
+je ONLY_ONE_SEC
+find IN_BASE, #0F84????????60??????6183EF010F85#
+cmp $RESULT, 00
+je NO_SPECIAL_ANTI_DEBUG_FOUND
+mov SPECIAL_ANTI, $RESULT
+mov [SPECIAL_ANTI], #90E9#, 02
+jmp YES_SPECIAL_ANTI_DEBUG_FOUND
+////////////////////
+ONLY_ONE_SEC:
+find ENIGMASEC, #0F84????????60??????6183EF010F85#
+cmp $RESULT, 00
+je NO_SPECIAL_ANTI_DEBUG_FOUND
+mov SPECIAL_ANTI, $RESULT
+mov [SPECIAL_ANTI], #90E9#, 02
+jmp YES_SPECIAL_ANTI_DEBUG_FOUND
+////////////////////
+YES_SPECIAL_ANTI_DEBUG_FOUND:
+popa
+log ""
+eval "Possible Special AD Found and Patched at: {SPECIAL_ANTI}"
+log $RESULT, ""
+log ""
+mov SPECIAL_E_ANTI, 00
+mov SPECIAL_E_ANTI, "Yes"
+ret
+////////////////////
+NO_SPECIAL_ANTI_DEBUG_FOUND:
+popa
+log ""
+log "No Special AD Found!"
+log ""
+mov SPECIAL_E_ANTI, 00
+mov SPECIAL_E_ANTI, "No"
+ret
+////////////////////
+CHECK_FOR_OLDER_VMS:
+Find ENIGMASEC, #50609C68E80300006A00FF35????????E8????????05E803#
+cmp $RESULT, 00
+jne FOUND_1.52_VM
+log ""
+log "Older VM Sign for 1.5x + not found!"
+log ""
+mov E_OLD_VM_SIGN, 00
+mov E_OLD_VM_SIGN, "No"
+ret
+////////////////////
+FOUND_1.52_VM:
+mov VM_ROUTINE_START, $RESULT
+mov tmp, $RESULT+15
+mov E_OLD_VM_SIGN, 00
+mov E_OLD_VM_SIGN, "Yes"
+findop tmp, #E8#
+mov tmp, $RESULT
+gci tmp, DESTINATION
+mov READ_VM_DATA, $RESULT
+find READ_VM_DATA, #A1??????????????A1????????8B38#
+cmp $RESULT, 00
+je CANT_READ_VM_HOLDER
+mov VM_STRUCT_POINTER, $RESULT
+mov VM_STRUCT_POINTER, [VM_STRUCT_POINTER+01]
+mov VM_INTO_START, [VM_STRUCT_POINTER]
+mov STOLEN_VM_BYTES, [VM_INTO_START]
+mov VM_ADDR, [VM_INTO_START+04]
+mov VM_COMMAND_LENGHT, [VM_INTO_START+08]
+mov VM_COMMAND, [VM_INTO_START+0C]
+log "---------- VM FOUND ----------"
+log ""
+log VM_STRUCT_POINTER, "VM_STRUCT_POINTER: "
+log VM_INTO_START, "VM_INTO_START:     "
+log STOLEN_VM_BYTES, "STOLEN_VM_BYTES:   "
+log VM_ADDR, "VM_ADDR:           "
+log VM_COMMAND_LENGHT, "VM_COMMAND_LENGHT: "
+log VM_COMMAND, "VM_COMMAND:        "
+log "etc"
+pusha
+mov eax, VM_ADDR
+add eax, MODULEBASE
+gci eax, COMMAND
+mov FIRST_VM_PUSH_AT, $RESULT
+eval "First VM found at: {eax} | {FIRST_VM_PUSH_AT}"
+log $RESULT, ""
+popa
+log ""
+log "Older VM Found!"
+log "Script can not fix this VM!"
+log "If you need to fix this VM then send your file to LCF-AT"
+log ""
+log "------------------------------"
+mov NOT_FIXABLE_VM_FOUND, 00
+mov NOT_FIXABLE_VM_FOUND, "Yes"
+ret
+////////////////////
+CANT_READ_VM_HOLDER:
+log VM_ROUTINE_START
+log "Older VM Sign Found but can't read the holder!"
+ret
+////////////////////
+E_REDIRECTION:
+bphwc E_REDI
+bphwc E_REDI_2
+log ""
+log "Advanced Redirection Used!"
+log ""
+alloc 1000
+mov E_REDISEC, $RESULT
+mov E_REDI, 00
+mov E_REDI, eip
+mov E_U_BASE, [eip+02]
+readstr [eip], 0D
+mov E_COM_BAK, $RESULT
+buf E_COM_BAK
+pusha
+mov eax, 00
+gci eip, SIZE
+mov eax, $RESULT
+readstr [eip], eax
+mov E_FIRST_COM, $RESULT
+buf E_FIRST_COM
+mov [E_REDISEC], E_FIRST_COM
+mov ecx, E_REDISEC
+add ecx, eax
+mov [ecx], #03118B008B128902#
+add ecx, 08
+mov edx, E_REDI
+add edx, 0A
+eval "jmp 0{edx}"
+asm ecx, $RESULT
+eval "jmp 0{E_REDISEC}"
+asm E_REDI, $RESULT
+mov [E_REDI+05], 90, 01
+////////////////////
+IMUL_LEA_CODE:
+find ENIGMASEC, #74??4B74??4B74??4B74??4B74??EB3A#
+cmp $RESULT, 00
+je NO_VMED_CODE_FOUND
+log ""
+log "Possible Code & API Redirection 1 Found!"
+log ""
+mov E_VM1, $RESULT
+readstr [E_VM1], 10
+mov E_VM1_BAK, $RESULT
+buf E_VM1_BAK
+gci E_VM1, DESTINATION
+mov E_VM1_OUT, $RESULT
+mov eax, E_VM1
+add eax, 20
+find eax, #74??4B74??4B74??4B74??4B74??EB3A#
+cmp $RESULT, 00
+je JUST_ONE_TIME
+log ""
+log "Possible Code & API Redirection 2 Found!"
+log ""
+mov E_VM2, $RESULT
+readstr [E_VM2], 10
+mov E_VM2_BAK, $RESULT
+buf E_VM2_BAK
+gci E_VM2, DESTINATION
+mov E_VM2_OUT, $RESULT
+////////////////////
+JUST_ONE_TIME:
+mov eax, E_VM1
+////////////////////
+CALL_LOOPA:
+preop eax
+mov eax, $RESULT
+cmp [eax], E8 ,01
+jne CALL_LOOPA
+preop eax
+mov eax, $RESULT
+mov E_POINTER_VM, [eax+01]
+alloc 4000
+mov E_VM1_SEC, $RESULT
+mov [E_VM1_SEC],
+#8D04768B15AAAAAAAA83FB01741483FB02741583FB03741683FB047417E988AA12A98B74C204EB108B
+74C208EB0A8B74C20CEB048B74C2108B3F893EE969AA12A99090#
+mov [E_VM1_SEC+1000],
+#8D04768B15AAAAAAAA83FB01741483FB02741583FB03741683FB047417E988AA12A98B74C204EB108B
+74C208EB0A8B74C20CEB048B74C2108B3F893EE969AA12A99090#
+mov [E_VM1_SEC+05], E_POINTER_VM
+mov [E_VM1_SEC+1000+05], E_POINTER_VM
+eval "jmp 0{E_VM1_SEC}"
+asm E_VM1+02, $RESULT
+eval "jmp 0{E_VM1_OUT}"
+asm E_VM1_SEC+1D, $RESULT
+eval "jmp 0{E_VM1_OUT}"
+asm E_VM1_SEC+3C, $RESULT
+log ""
+log "Code Redirection 1 Patched!"
+log ""
+find ENIGMASEC, #8D0476????????????????????EB??8D0476????????????????????EB??
+8D0476????????????????????EB??#
+cmp $RESULT, 00
+jne NO_IMUL_USED
+find ENIGMASEC, #6BC615????????????????????EB??6BC615????????????????????EB??
+6BC615????????????????????EB??#
+cmp $RESULT, 00
+jne IMUL_USED
+log ""
+log "Problem!"
+log "ADV Code Redirection Command LEA & IMUL not found!"
+msg "ADV Code Redirection Command LEA & IMUL not found!"
+pause
+pause
+ret
+////////////////////
+IMUL_USED:
+mov [E_VM1_SEC], #6BC615#
+mov [E_VM1_SEC+1000], #6BC615#
+log ""
+log "ADV was patched to IMUL!"
+log ""
+////////////////////
+NO_IMUL_USED:
+cmp E_VM2, 00
+je NO_VMED_CODE_FOUND
+add E_VM1_SEC, 1000
+eval "jmp 0{E_VM1_SEC}"
+asm E_VM2+02, $RESULT
+eval "jmp 0{E_VM2_OUT}"
+asm E_VM1_SEC+1D, $RESULT
+eval "jmp 0{E_VM2_OUT}"
+asm E_VM1_SEC+3C, $RESULT
+sub E_VM1_SEC, 1000
+log ""
+log "Code Redirection 2 Patched!"
+log ""
+////////////////////
+NO_VMED_CODE_FOUND:
+popa
+cmp E_STAMP, 00
+jne E_REDIRECTION_OUT
+jmp 123C
+////////////////////
+FIND_IMULER:
+find ENIGMASEC, #5?5?5?5?5?BD#
+cmp $RESULT, 00
+je NO_IAT_TABLE_2
+mov E_IAT_TABLE, [$RESULT+06]
+mov E_IAT_START, [E_IAT_TABLE]
+mov API_COUNT, [E_IAT_START-04]
+pusha
+find ENIGMASEC, #74??4B74??4B74??4B74??4B74??EB3A#
+cmp $RESULT, 00
+je NO_VMED_CODE_FOUND_2
+log ""
+log "Possible Code & API Redirection 1 Found!"
+log ""
+mov E_VM1, $RESULT
+readstr [E_VM1], 10
+mov E_VM1_BAK, $RESULT
+buf E_VM1_BAK
+gci E_VM1, DESTINATION
+mov E_VM1_OUT, $RESULT
+mov eax, E_VM1
+add eax, 20
+find eax, #74??4B74??4B74??4B74??4B74??EB3A#
+cmp $RESULT, 00
+je JUST_ONE_TIME_2
+log ""
+log "Possible Code & API Redirection 2 Found!"
+log ""
+mov E_VM2, $RESULT
+readstr [E_VM2], 10
+mov E_VM2_BAK, $RESULT
+buf E_VM2_BAK
+gci E_VM2, DESTINATION
+mov E_VM2_OUT, $RESULT
+////////////////////
+JUST_ONE_TIME_2:
+mov eax, E_VM1
+////////////////////
+CALL_LOOPA_2:
+preop eax
+mov eax, $RESULT
+cmp [eax], E8 ,01
+jne CALL_LOOPA_2
+preop eax
+mov eax, $RESULT
+mov E_POINTER_VM, [eax+01]
+alloc 4000
+mov E_VM1_SEC, $RESULT
+mov [E_VM1_SEC],
+#8D04768B15AAAAAAAA83FB01741483FB02741583FB03741683FB047417E988AA12A98B74C204EB108B
+74C208EB0A8B74C20CEB048B74C2108B3F893EE969AA12A99090#
+mov [E_VM1_SEC+1000],
+#8D04768B15AAAAAAAA83FB01741483FB02741583FB03741683FB047417E988AA12A98B74C204EB108B
+74C208EB0A8B74C20CEB048B74C2108B3F893EE969AA12A99090#
+mov [E_VM1_SEC+05], E_POINTER_VM
+mov [E_VM1_SEC+1000+05], E_POINTER_VM
+eval "jmp 0{E_VM1_SEC}"
+asm E_VM1+02, $RESULT
+eval "jmp 0{E_VM1_OUT}"
+asm E_VM1_SEC+1D, $RESULT
+eval "jmp 0{E_VM1_OUT}"
+asm E_VM1_SEC+3C, $RESULT
+log ""
+log "Code Redirection 1 Patched!"
+log ""
+find ENIGMASEC, #8D0476????????????????????EB??8D0476????????????????????EB??
+8D0476????????????????????EB??#
+cmp $RESULT, 00
+jne NO_IMUL_USED_2
+find ENIGMASEC, #6BC615????????????????????EB??6BC615????????????????????EB??
+6BC615????????????????????EB??#
+cmp $RESULT, 00
+jne IMUL_USED_2
+log ""
+log "Problem!"
+log "ADV Code Redirection Command LEA & IMUL not found!"
+msg "ADV Code Redirection Command LEA & IMUL not found!"
+pause
+pause
+ret
+////////////////////
+IMUL_USED_2:
+mov [E_VM1_SEC], #6BC615#
+mov [E_VM1_SEC+1000], #6BC615#
+log ""
+log "ADV was patched to IMUL!"
+log ""
+////////////////////
+NO_IMUL_USED_2:
+cmp E_VM2, 00
+je NO_VMED_CODE_FOUND_2
+add E_VM1_SEC, 1000
+eval "jmp 0{E_VM1_SEC}"
+asm E_VM2+02, $RESULT
+eval "jmp 0{E_VM2_OUT}"
+asm E_VM1_SEC+1D, $RESULT
+eval "jmp 0{E_VM2_OUT}"
+asm E_VM1_SEC+3C, $RESULT
+sub E_VM1_SEC, 1000
+log ""
+log "Code Redirection 2 Patched!"
+log ""
+////////////////////
+NO_VMED_CODE_FOUND_2:
+popa
+jmp E_REDIRECTION_OUT
+////////////////////
+NO_IAT_TABLE_2:
+ret
+////////////////////
+E_REDIRECTION_OUT:
+jmp E_STAMP_LABEL
+////////////////////
+IAT_IN_OUT_CHECK:
+refresh eip
+call CODESECTION_COPY
+////////////////////
+API_GET_LOOP_A:
+find CODEBAK, #FF25#
+cmp $RESULT, 00
+je FIND_CALL_API_A
+mov CODEBAK, $RESULT+02
+mov APICOMMAND, $RESULT
+mov APIADDRESS, [APICOMMAND+02]
+gn [APIADDRESS]
+cmp $RESULT, 00
+je API_GET_LOOP_A
+jmp NEW_IAT_STORE_LOG_2
+////////////////////
+FIND_CALL_API_A:
+call CODESECTION_COPY
+////////////////////
+FIND_CALL_API_2:
+find CODEBAK, #FF15#
+cmp $RESULT, 00
+je NO_FIXED_APIS_FOUND
+mov CODEBAK, $RESULT+02
+mov APICOMMAND, $RESULT
+mov APIADDRESS, [APICOMMAND+02]
+gn [APIADDRESS]
+cmp $RESULT, 00
+je FIND_CALL_API_2
+jmp NEW_IAT_STORE_LOG_2
+////////////////////
+NEW_IAT_STORE_LOG_2:
+gmemi APIADDRESS, MEMORYBASE
+mov IATLOCATION, $RESULT
+gmemi IATLOCATION, MEMORYSIZE
+mov IATLOCATION_SIZE, $RESULT
+pusha
+mov eax, MODULEBASE
+mov ecx, MODULEBASE_and_MODULESIZE
+cmp IATLOCATION, eax
+jb IAT_OUTSIDE
+cmp IATLOCATION, ecx
+ja IAT_OUTSIDE
+popa
+log ""
+log "IAT was located inside the main target!"
+log ""
+ret
+////////////////////
+IAT_OUTSIDE:
+popa
+log ""
+log "IAT was located outside the main target!"
+log "So you have to use the UIF fixing tool!"
+log ""
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Sorry,you have to redirect the IAT with UIF
+later! \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+ret
+////////////////////////////////////////
+FIND_POSSIBLE_WRONG_TLS_POINTER_IN_APP:
+pusha
+mov eax, ENIGMASEC
+////////////////////
+WRONG_TLS_SCAN:
+find eax, #648B15000000008B0482#
+cmp $RESULT, 00
+je NO_W_TLS_FOUND
+call LOG_FIX_WRONG_TLS
+////////////////////
+WRONG_TLS_SCAN_2:
+find eax, #648B15000000008B0482#
+cmp $RESULT, 00
+je ALL_WRONG_TLS_FIXED
+call LOG_FIX_WRONG_TLS
+jmp WRONG_TLS_SCAN_2
+////////////////////
+ALL_WRONG_TLS_FIXED:
+popa
+ret
+////////////////////
+LOG_FIX_WRONG_TLS:
+mov TLS_WRONG_POINTER, $RESULT
+mov eax, $RESULT
+log ""
+log "Found WRONG TLS pointer!"
+log ""
+log TLS_WRONG_POINTER, "TLS_WRONG_POINTER VA: "
+log ""
+mov [TLS_WRONG_POINTER+03], 2C, 01
+log "Fixed WRONG pointer by script!"
+log ""
+log "Borland Delphi fix problem of DV plugin!"
+log ""
+ret
+////////////////////
+NO_W_TLS_FOUND:
+popa
+log ""
+log "Found no wrong TLS pointer in Enigma section!"
+log ""
+ret
+////////////////////
+MODERN_EXTRA_FILES:
+bc eip
+cmp [eip], #E8#, 01
+jne MAP_VERSION_2
+mov FILE_ADDR, [esp]
+mov FILE_SIZE, [esp+04]
+mov DUMP_THIS, ebx
+mov $RESULT, 00
+gstr [esp+190]
+cmp $RESULT, 00
+jne GET_ASCII_NAME_A
+gstrw [esp+190]
+cmp $RESULT, 00
+jne GET_ASCII_NAME_A
+////////////////////
+ASK_FOR_ESP_ADDRRESS_A:
+ask "Now just enter the ESP address!"
+cmp $RESULT, 00
+je ASK_FOR_ESP_ADDRRESS_A
+cmp $RESULT, -1
+je ASK_FOR_ESP_ADDRRESS_A
+pusha
+mov eax, $RESULT
+mov $RESULT, 00
+gstr [eax]
+cmp $RESULT, 00
+jne GET_ASCII_NAME_BY_USER_A
+gstrw [eax]
+cmp $RESULT, 00
+jne GET_ASCII_NAME_BY_USER_A
+log ""
+log "There is something wrong again!"
+log "Can't read the name of the address which you have enter!"
+log ""
+pause
+pause
+pause
+pause
+////////////////////
+GET_ASCII_NAME_BY_USER_A:
+popa
+////////////////////
+GET_ASCII_NAME_A:
+mov DLL_NAMES, $RESULT
+log DLL_NAMES, ""
+mov $RESULT, 00
+gstr [esp+1DC]
+cmp $RESULT, 00
+jne FOUND_THE_PATH_A
+gstrw [esp+1DC]
+cmp $RESULT, 00
+jne FOUND_THE_PATH_A
+jmp FOUND_NOT_THE_PATH_A
+////////////////////
+FOUND_THE_PATH_A:
+mov DLL_NAMES_PATH, $RESULT
+log DLL_NAMES_PATH, ""
+////////////////////
+FOUND_NOT_THE_PATH_A:
+call ESP_READ
+pusha
+mov eax, DUMP_THIS
+gmemi eax, MEMORYSIZE
+mov ecx, $RESULT
+gmemi eax, MEMORYBASE
+mov edx, $RESULT
+cmp eax, edx
+je SAME_SEC_START_A
+sub eax, edx
+sub ecx, eax
+mov FILE_SIZE, ecx
+////////////////////
+SAME_SEC_START_A:
+mov FILE_SIZE, ecx
+alloc FILE_SIZE
+mov RADOMSEC, $RESULT
+mov ecx, FILE_SIZE
+mov edi, RADOMSEC
+mov esi, DUMP_THIS
+exec
+REP MOVS BYTE PTR ES:[EDI],BYTE PTR DS:[ESI]
+ende
+popa
+dm RADOMSEC, FILE_SIZE, DLL_NAMES
+free RADOMSEC
+inc EXTRA_FILES
+call ESP_WRITE
+log ""
+log "Dumped embedded file!"
+log ""
+eval "{DLL_NAMES} - New File!"
+log $RESULT, ""
+log ""
+eval "Base: {RADOMSEC} VA | Size: {FILE_SIZE} | Name: {DLL_NAMES}"
+log $RESULT, ""
+log ""
+call NOTE_DUMPED_FILES
+mov BAK, eip
+call STO_LOOP
+bp BAK
+cmp AFTER_OEP_SCAN, 01
+je EXTRA_5_CHECK
+jmp MAGIC_RUN
+////////////////////
+MAP_VERSION_2:
+bc eip
+mov FILE_ADDR, esi
+mov DUMP_THIS, ebx
+mov $RESULT, 00
+gstr [esp+120]
+cmp $RESULT, 00
+jne GET_ASCII_NAME
+gstrw [esp+120]
+cmp $RESULT, 00
+jne GET_ASCII_NAME
+log ""
+log "Can't find the new module name in stack!"
+log ""
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Can't find the new module name in stack at
+[ESP+120]! {L1}Check manually where you can see the new dll name! {L1}If you found
+then just copy the ESP address into next ASK message! \r\n\r\n{LINES} \r\n{MY}"
+msg $RESULT
+////////////////////
+ASK_FOR_ESP_ADDRRESS:
+ask "Now just enter the ESP address!"
+cmp $RESULT, 00
+je ASK_FOR_ESP_ADDRRESS
+cmp $RESULT, -1
+je ASK_FOR_ESP_ADDRRESS
+pusha
+mov eax, $RESULT
+mov $RESULT, 00
+gstr [eax]
+cmp $RESULT, 00
+jne GET_ASCII_NAME_BY_USER
+gstrw [eax]
+cmp $RESULT, 00
+jne GET_ASCII_NAME_BY_USER
+log ""
+log "There is something wrong again!"
+log "Can't read the name of the address which you have enter!"
+log ""
+pause
+pause
+pause
+pause
+////////////////////
+GET_ASCII_NAME_BY_USER:
+popa
+////////////////////
+GET_ASCII_NAME:
+mov DLL_NAMES, $RESULT
+log DLL_NAMES, ""
+mov $RESULT, 00
+gstr [esp+16C]
+cmp $RESULT, 00
+jne FOUND_THE_PATH
+gstrw [esp+16C]
+cmp $RESULT, 00
+jne FOUND_THE_PATH
+jmp FOUND_NOT_THE_PATH
+////////////////////
+FOUND_THE_PATH:
+mov DLL_NAMES_PATH, $RESULT
+log DLL_NAMES_PATH, ""
+////////////////////
+FOUND_NOT_THE_PATH:
+call ESP_READ
+pusha
+mov eax, DUMP_THIS
+gmemi eax, MEMORYSIZE
+mov ecx, $RESULT
+gmemi eax, MEMORYBASE
+mov edx, $RESULT
+cmp eax, edx
+je SAME_SEC_START
+sub eax, edx
+sub ecx, eax
+mov FILE_SIZE, ecx
+////////////////////
+SAME_SEC_START:
+mov FILE_SIZE, ecx
+alloc FILE_SIZE
+mov RADOMSEC, $RESULT
+mov ecx, FILE_SIZE
+mov edi, RADOMSEC
+mov esi, DUMP_THIS
+exec
+REP MOVS BYTE PTR ES:[EDI],BYTE PTR DS:[ESI]
+ende
+popa
+dm RADOMSEC, FILE_SIZE, DLL_NAMES
+free RADOMSEC
+inc EXTRA_FILES
+call ESP_WRITE
+log ""
+log "Dumped embedded file!"
+log ""
+eval "{DLL_NAMES} - New File!"
+log $RESULT, ""
+log ""
+eval "Base: {RADOMSEC} VA | Size: {FILE_SIZE} | Name: {DLL_NAMES}"
+log $RESULT, ""
+log ""
+call NOTE_DUMPED_FILES
+mov BAK, eip
+call STI_LOOP
+bp BAK
+cmp AFTER_OEP_SCAN, 01
+je EXTRA_5_CHECK
+jmp MAGIC_RUN
+////////////////////
+NOTE_DUMPED_FILES:
+cmp WRITTEN_DATA_A, 00
+jne NOTE_ALL_INFOS
+alloc 1000
+mov NOTESEC, $RESULT
+mov NOTESEC_2, $RESULT
+alloc 1000
+mov NOTESEC_NAME, $RESULT
+mov NOTESEC_NAME_2, $RESULT
+////////////////////
+NOTE_ALL_INFOS:
+mov ecx, NOTESEC_NAME
+mov [ecx], DLL_NAMES
+len [ecx]
+add ecx, $RESULT
+inc ecx
+mov NOTESEC_NAME, ecx
+mov eax, NOTESEC
+////////////////////
+NULL_FIND_A:
+cmp [eax], 00
+je WRITE_EXTRA_A
+add eax, 04
+jmp NULL_FIND_A
+////////////////////
+WRITE_EXTRA_A:
+mov [eax], FILE_ADDR
+mov WRITTEN_DATA_A, 01
+ret
+////////////////////
+FIND_LATEST_RD:
+find ENIGMASEC, #8B2D????????8B6D00037D64890F#
+cmp $RESULT, 00
+je NO_LATEST_RD_FOUND
+mov L_RD, $RESULT
+find L_RD, #5?5?5?5?#
+cmp $RESULT, 00
+jne POP_LOOP
+pause
+pause
+pause
+////////////////////
+POP_LOOP:
+mov POP, $RESULT
+bphws L_RD
+bpgoto L_RD, LATEST_RD_PATCH
+ret
+////////////////////
+NO_LATEST_RD_FOUND:
+ret
+////////////////////
+LATEST_RD_PATCH:
+bphwc L_RD
+alloc 1000
+mov LA_SEC, $RESULT
+pusha
+mov eax, LA_SEC
+gci eip, SIZE
+mov ecx, $RESULT
+readstr [eip], ecx
+buf $RESULT
+mov [eax], $RESULT
+add eax, ecx
+mov [eax], #8B6D00037D648B098B3F890FE993AA17A990#
+add eax, 0C
+add L_RD, 0E
+eval "jmp {L_RD}"
+asm eax, $RESULT
+sub L_RD, 0E
+readstr [L_RD], 20
+mov L_RD_BAK, $RESULT
+buf L_RD_BAK
+eval "jmp {LA_SEC}"
+asm L_RD, $RESULT
+bphws POP
+popa
+run
+bphwc POP
+mov [L_RD], L_RD_BAK
+free LA_SEC
+log ""
+log "Latest ADV was patched!"
+log ""
+jmp U1A
+////////////////////
+TRY_STONE_OLD_UNPACK:
+eval "{SCRIPTNAME} {L2}{LONG} {L1} {L2}Now starts the unpack process of older
+ENIGMA PROTECTION! {L1}Enigma Protector 1.02 ~~ 1.31 {L1}Author: skylly {L1}NOTE:
+If this unpack process fail then disable Protect DRx and try again!   \r\n\r\
+n{LINES} \r\n{MY}"
+msg $RESULT
+log ""
+log "Now starts the unpack process of older ENIGMA PROTECTION!"
+log ""
+log "Enigma Protector 1.02 ~~ 1.31"
+log ""
+log "Author: skylly"
+log ""
+log "NOTE: If this unpack process fail then disable Protect DRx and try again!"
+log ""
+mov loaderbase, ENIGMASEC
+mov cb, CODESECTION
+mov cs, CODESECTION_SIZE
+/////////////////////////////////////////
+//code for enigma protector 1.02 ~~ 1.31
+//code by skylly
+/////////////////////////////////////////
+repl eip,#89009A648F#,#909090648F#,1000
+find eip,#E9??????FF#
+cmp $RESULT,0
+je err
+add $RESULT,5
+bp $RESULT
+esto
+bc $RESULT
+find eip,#0F85????????#
+cmp $RESULT,0
+je not115
+log "ver 1.15-1.16-1.31"
+add $RESULT,6
+go $RESULT
+jmp not115
+////////////////////
+ver131:
+find loaderbase,#894C820447FF4D#
+cmp $RESULT,0
+je err
+mov [$RESULT],#90909090#
+find loaderbase,#894C820483C304668B3B83C3026685FF#
+cmp $RESULT,0
+je err
+mov [$RESULT],#90909090#
+find loaderbase,#894C820483C304#
+cmp $RESULT,0
+je err
+mov encapi,$RESULT
+find loaderbase,#8902464F7599#
+cmp $RESULT,0
+je err
+mov relociat,$RESULT
+find loaderbase,#0F84B70000008D45F8#
+cmp $RESULT,0
+je err
+mov [$RESULT],#90E9#
+find loaderbase,#746F546A046A00#
+cmp $RESULT,0
+je anothermethod
+mov [$RESULT],#EB#
+sub $RESULT,7
+mov [$RESULT],#C680#
+jmp fixapi
+////////////////////
+anothermethod:
+find loaderbase,#C6431D01E8#
+cmp $RESULT,0
+je err
+add $RESULT,4
+mov [$RESULT],#9090909090#
+////////////////////
+fixapi:
+bp encapi
+bp relociat
+////////////////////
+loopenc:
+esto
+cmp eip,relociat
+je encapiok
+log ecx
+mov number,[ebx]
+log number
+jmp loopenc
+////////////////////
+encapiok:
+bc encapi
+bc relociat
+mov [relociat],#EB14#
+cmt relociat,"iat"
+find eip,#8D4000535657#
+cmp $RESULT,0
+je err
+mov patchaddr,$RESULT
+mov [patchaddr],#50538B008B1A89035B58EBE4#
+find eip,#5BC3#
+cmp $RESULT,0
+je err
+mov fixiatok,$RESULT
+bp fixiatok
+esto
+bc fixiatok
+find loaderbase,#FFE05E5B#
+cmp $RESULT,0
+je err
+bp $RESULT
+esto
+bc $RESULT
+sti
+find eip,#0104248B05#
+cmp $RESULT,0
+je antojmp
+add $RESULT,9
+bp $RESULT
+esto
+bc $RESULT
+sti
+jmp OEP
+////////////////////
+antojmp:
+find eip,#FFE00000#
+cmp $RESULT,0
+je err
+bp $RESULT
+esto
+bc $RESULT
+sti
+jmp OEP
+ret
+////////////////////
+not115:
+find eip,#75AA#
+cmp $RESULT,0
+je notloop
+add $RESULT,2
+go $RESULT
+////////////////////
+notloop:
+repl eip,#89009A648F#,#909090648F#,1000
+mov loaderbase,esi
+log loaderbase
+find esi,#84C0750F#
+cmp $RESULT,0
+je nomd5
+add $RESULT,2
+mov [$RESULT],#EB#
+cmt $RESULT,"md5 check"
+////////////////////
+nomd5:
+find loaderbase,#A3????????031D????????8BC3#
+cmp $RESULT,0
+je err
+mov [$RESULT],#9090909090#
+find loaderbase,#83C8FF8BDA4B85DB72#
+cmp $RESULT,0
+je err
+add $RESULT,8
+mov [$RESULT],#EB#
+cmt $RESULT,"crc check"
+find loaderbase,#83C8FF8BDA4B85DB72#
+cmp $RESULT,0
+je err
+add $RESULT,8
+mov [$RESULT],#EB#
+cmt $RESULT,"crc check"
+find loaderbase,#8B0C8D????????894C020183C60466#
+cmp $RESULT,0
+jne fixsdkapi
+find loaderbase,#8B0C8D????????894C0201EB33#
+cmp $RESULT,0
+je ver131
+////////////////////
+fixsdkapi:
+add $RESULT,7
+mov [$RESULT],#90909090#
+cmt $RESULT,"sdk api"
+jmp nospecialapi
+////////////////////
+nospecialapi:
+find loaderbase,#8B4C24??894C0201#
+cmp $RESULT,0
+je normal2
+add $RESULT,4
+jmp findenapi
+////////////////////
+normal2:
+find loaderbase,#8B4D??894C0201#
+cmp $RESULT,0
+je err
+add $RESULT,3
+////////////////////
+findenapi:
+mov [$RESULT],#90909090#
+cmt $RESULT,"normal api"
+find loaderbase,#894C020183C604#
+cmp $RESULT,0
+je concon
+mov enigma_api,$RESULT
+cmt $RESULT,"enigma api"
+////////////////////
+concon:
+bprm cb,cs
+esto
+bpmc
+mov temp,[eip]
+and temp,FFFF
+cmp temp,A5F3
+jne err
+findop eip, #C3#
+bp $RESULT
+run
+bc eip
+sti
+findop eip, #C3#
+bp $RESULT
+mov BAK, $RESULT
+cmp eip, BAK
+jne RUN_MES
+bc BAK
+rtr
+jmp STI_THIS
+////////////////////
+RUN_MES:
+run
+bc eip
+////////////////////
+STI_THIS:
+sti
+mov temp,[eip]
+and temp,FFFF
+cmp temp,558D
+jne not102
+log "ver 1.02"
+findop eip, #C3#
+bp $RESULT
+run
+bc eip
+sti
+findop eip, #C3#
+bp $RESULT
+run
+bc eip
+sti
+////////////////////
+clearseh:
+find eip,#64FF350000000064892500000000EB02#
+cmp $RESULT,0
+je start
+mov patchaddr,$RESULT
+add patchaddr,E
+find patchaddr,#648F0500000000EB029A0083C404E802#
+cmp $RESULT,0
+je err
+mov newaddr,$RESULT
+bp patchaddr
+esto
+bc patchaddr
+mov eip,newaddr
+////////////////////
+start:
+inc newaddr
+find newaddr,#648F0500000000EB029A0083C404E802#
+cmp $RESULT,0
+je err
+bp $RESULT
+esto
+bc $RESULT
+jmp fixiatreloc
+ret
+////////////////////
+not102:
+and temp,FF
+cmp temp,A1
+jne not114
+log "ver 1.14"
+find loaderbase,#74708B06E8#
+cmp $RESULT,0
+je ver112
+mov [$RESULT],#EB#
+find loaderbase,#74708B06E8#
+cmp $RESULT,0
+je err
+mov [$RESULT],#EB#
+jmp ver112
+ret
+////////////////////
+unkownver:
+log "unkown version,please contact skylly to get help"
+ret
+////////////////////
+not114:
+cmp temp,E8
+jne unkownver
+log "ver 1.11-1.12"
+////////////////////
+ver112:
+find eip,#A9000000807528#
+cmp $RESULT,0
+je err
+mov addr,$RESULT
+add addr,11
+var baseaddr
+mov baseaddr,[addr]
+add addr,8
+mov magicaddr,[addr]
+add addr,6
+var offaddr
+mov offaddr,[addr]
+mov baseaddr,[baseaddr]
+mov baseaddr,[baseaddr]
+mov magicaddr,[magicaddr]
+add magicaddr,offaddr
+mov magicaddr,[magicaddr]
+add magicaddr,baseaddr
+find eip,#2500F0FFFF0500100000#
+cmp $RESULT,0
+je fixdatareloc2
+add $RESULT,5
+mov patchreloc,$RESULT
+mov [patchreloc],#B8#
+inc patchreloc
+mov [patchreloc],magicaddr
+////////////////////
+fixiatreloc:
+find loaderbase,#890F404A75D0#
+cmp $RESULT,0
+je err
+mov magicpatchaddr,$RESULT
+find loaderbase,#80B838030000007405E8????FFFFA1????????80B839030000007407E8????
+FFFFEB05E8??????FF#
+cmp  $RESULT,0
+je   normalapi
+jmp heheob
+////////////////////
+normalapi:
+find loaderbase,#80B8??03000000740CA1????????8B00E8??????FFA1????????80B8??
+030000007407E8??????FFEB05E8??????FF#
+cmp $RESULT,0
+je prossiat
+////////////////////
+heheob:
+mov obfuscation,$RESULT
+cmt obfuscation,"<-- Import Obfuscation!"
+bp obfuscation
+cmp enigma_api,0
+je loopenigma_api
+bp enigma_api
+////////////////////
+loopenigma_api:
+esto
+cmp eip,obfuscation
+je fixenigmaok
+log ecx
+mov number,[esi]
+log number
+////////////////////
+ea0:
+cmp number,A
+jne ea1
+cmt ecx,"_GetExpiratonDate@12"
+jmp nextea
+////////////////////
+ea1:
+cmp number,9
+jne ea2
+cmt ecx,"_GetNumberOfDays@8"
+jmp nextea
+////////////////////
+ea2:
+cmp number,8
+jne ea3
+cmt ecx,"_GetNumberOfExecutions@8"
+jmp nextea
+////////////////////
+ea3:
+cmp number,7
+jne ea4
+cmt ecx,"_DeleteKey@0"
+jmp nextea
+////////////////////
+ea4:
+cmp number,6
+jne ea5
+cmt ecx,"_CheckAndSaveKey@8"
+jmp nextea
+////////////////////
+ea5:
+cmp number,5
+jne ea6
+cmt ecx,"_LoadAndCheckKey@0"
+jmp nextea
+////////////////////
+ea6:
+cmp number,4
+jne ea7
+cmt ecx,"_LoadKey@8"
+jmp nextea
+////////////////////
+ea7:
+cmp number,3
+jne ea8
+cmt ecx,"_SaveKey@8"
+jmp nextea
+////////////////////
+ea8:
+cmp number,2
+jne ea9
+cmt ecx,"_CheckKey@8"
+jmp nextea
+////////////////////
+ea9:
+cmp number,1
+jne default
+cmt ecx,"_GetHardwareId@0"
+jmp nextea
+////////////////////
+default:
+cmt ecx,"_unknown"
+////////////////////
+nextea:
+jmp loopenigma_api
+////////////////////
+fixenigmaok:
+bc obfuscation
+bc enigma_api
+mov temp,eip
+add temp,2
+mov temp,[temp]
+add temp,eax
+mov temp,[temp]
+cmp temp,0
+jne prossiat
+jmp fixdatareloc
+ret
+////////////////////
+prossiat:
+bp magicpatchaddr
+call STO_LOOP
+////////////////////
+STOMER:
+call STO_LOOP
+cmp [eip], 74, 01
+je FOUND_NEXTER
+jmp STOMER
+////////////////////
+FOUND_NEXTER:
+cmp !ZF, 00
+je NORMAL_GOHOP
+bc magicpatchaddr
+find magicpatchaddr,#535657#
+cmp $RESULT,0
+je err
+bp $RESULT
+esto
+bc
+jmp NORMAL_GOHOP_2
+////////////////////
+NORMAL_GOHOP:
+esto
+bc magicpatchaddr
+find eip,#535657#
+cmp $RESULT,0
+je err
+mov magicpatch,$RESULT
+mov save1,[magicpatch]
+add magicpatch,4
+mov save2,[magicpatch]
+add magicpatch,4
+mov save3,[magicpatch]
+sub magicpatch,8
+mov [magicpatch],#50538B018B1F89035B58EBE4#
+mov [magicpatchaddr],#EB10#
+cmt magicpatchaddr,"iat"
+////////////////////
+NORMAL_GOHOP_2:
+find eip,#5BC3#
+cmp $RESULT,0
+je err
+mov fixiatok,$RESULT
+bp fixiatok
+esto
+bc fixiatok
+mov [magicpatch],save1
+add magicpatch,4
+mov [magicpatch],save2
+add magicpatch,4
+mov [magicpatch],save3
+////////////////////
+fixdatareloc:
+find eip,#03??01??EB??8B0D#
+cmp $RESULT,0
+je fixdatareloc2
+add $RESULT,2
+mov [$RESULT],#9090#
+////////////////////
+fixdatareloc2:
+find eip,#83B898000000000F84#
+cmp $RESULT,0
+je jmpingoep
+bp $RESULT
+esto
+bc $RESULT
+find eip,#6A046800100000A1#
+cmp $RESULT,0
+je err
+mov addr,$RESULT
+mov magicaddr,addr
+add magicaddr,8
+mov magicaddr,[magicaddr]
+mov magicaddr,[magicaddr]
+mov [addr],#9090909090909090909090909090909090909090909090909090#
+find eip,#2B8A????????8B15????????2B8A#
+cmp $RESULT,0
+je err
+mov baseaddr,$RESULT
+add baseaddr,2
+mov baseaddr,[baseaddr]
+mov allocaddr,$RESULT
+add allocaddr,E
+mov allocaddr,[allocaddr]
+add baseaddr,magicaddr
+add allocaddr,magicaddr
+mov baseaddr,[baseaddr]
+mov allocaddr,[allocaddr]
+add allocaddr,baseaddr
+eval "mov eax,{allocaddr}"
+asm addr,$RESULT
+jmp jmpingoep
+////////////////////
+jmpingoep:
+find eip,#8378??000F86??000000#
+cmp $RESULT,0
+je oldmethod
+bp $RESULT
+esto
+bc $RESULT
+mov temp,eip
+add temp,2
+mov temp,[temp]
+and temp,FF
+add temp,eax
+mov temp,[temp]
+cmp temp,0
+ja oldmethod
+////////////////////
+midmethod:
+find loaderbase,#010424A1#
+cmp $RESULT,0
+je err
+add $RESULT,8
+mov jmpoep,$RESULT
+jmp jmpedoep
+ret
+////////////////////
+newmethod:
+find eip,#50E8????????EB#
+cmp $RESULT,0
+je err
+go $RESULT
+mov tagaddr,ecx
+and tagaddr,FFFFFF00
+jmp allisok
+ret
+////////////////////
+oldmethod:
+find loaderbase,#81FA54414452#
+cmp $RESULT,0
+je newmethod
+mov mover,$RESULT
+bp mover
+esto
+bc mover
+mov tagaddr,eax
+find eip,#C2??00#
+cmp $RESULT,0
+je err
+go $RESULT
+jmp allisok
+////////////////////
+allisok:
+find tagaddr,#61C3#
+cmp $RESULT,0
+je err
+mov jmpoep,$RESULT
+inc jmpoep
+////////////////////
+jmpedoep:
+bp jmpoep
+esto
+bc jmpoep
+sti
+////////////////////
+OEP:
+cmt eip,"fake oep,fix oep and dump now"
+an eip
+pause
+ret
+////////////////////
+err:
+msg "error"
+ret
