@@ -1,0 +1,1 @@
+﻿{"name":"DelphiStrCmp","address":"01a613e0","decompiled":"\r\nvoid DelphiStrCmp(void)\r\n\r\n{\r\n  FUN_01a612a4();\r\n  return;\r\n}\r\n\r\n"}
